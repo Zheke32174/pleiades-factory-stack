@@ -6,3 +6,6 @@ __pycache__/
 .vscode/
 .idea/
 .env
+
+# Third-party tools — installed by bootstrap-tools.sh, not vendored
+tools/
