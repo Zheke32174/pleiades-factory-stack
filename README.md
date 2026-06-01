@@ -1,92 +1,69 @@
-# Pleiades Factory Tools & AI Stack
+# Pleiades Factory Stack
 
-**Toolchain integration, LLM deployment, cross-ISA build pipeline, and research automation.**
+Toolchain integration, LLM deployment, cross-ISA build pipeline, and research automation helpers.
 
-Part of the [Pleiades](https://github.com/Zheke32174/pleiades) ecosystem — a WSL2/Gentoo systemd-nspawn security research and autonomous agent platform.
+Part of the [Pleiades](https://github.com/Zheke32174/pleiades) ecosystem — an owner-authorized defensive container lab.
 
-## Repositories
+## Repository Map
 
 | Repo | Purpose |
 |------|---------|
-| [pleiades](https://github.com/Zheke32174/pleiades) | Host scripts, task master, toolchain orchestrator |
-| [pleiades-container](https://github.com/Zheke32174/pleiades-container) | Gentoo nspawn container — agent stack deployment |
-| **pleiades-factory-stack** (this repo) | Factory tools, AI/LLM stack, cross-ISA toolchain |
-| [pleiades-evidence](https://github.com/Zheke32174/pleiades-evidence) | Private — secured evidence archive |
-| [underhall](https://github.com/Zheke32174/underhall) | Original Arch nspawn install layer |
-| [undercity](https://github.com/Zheke32174/undercity) | Backup/restore tooling |
+| [`pleiades`](https://github.com/Zheke32174/pleiades) | Host scripts and agent suite |
+| [`pleiades-container`](https://github.com/Zheke32174/pleiades-container) | Gentoo `systemd-nspawn` container layer |
+| **`pleiades-factory-stack`** (this repo) | Tooling, AI/LLM integration, cross-ISA research helpers |
+| `pleiades-evidence` | Private evidence archive — never public |
 
-## Components
+## What's Here
 
-### Factory Tools
-
-| Tool | Description |
-|------|-------------|
-| `pleiades-factory-tools.sh` | CLI orchestrator for all factory tools |
-| `paper2code` | arXiv paper to implementation pipeline |
-| `hermes-agent-self-evolution` | AI agent self-improvement harness |
-| `continual-harness` | Continuous testing and evaluation framework |
-
-### AI Stack
-
-| Component | Description |
-|-----------|-------------|
-| LLM Quantization | GGUF/GPTQ model optimization for local inference |
-| Cross-ISA Build | QEMU + Box64 multi-architecture compilation |
-| Alien Package Bridge | Multi-distribution package conversion (deb + Gentoo) |
-
-## Third-Party Credits & Licenses
-
-This project integrates and builds upon several open-source projects:
-
-### Core Tools
-- **Hermes Agent** — AI agent framework by Nous Research ([github.com/NousResearch/hermes](https://github.com/NousResearch/hermes)) — MIT
-- **Claude Code** — CLI coding agent by Anthropic ([docs.anthropic.com](https://docs.anthropic.com/en/docs/claude-code)) — Subject to Anthropic ToS
-- **Codex CLI** — CLI coding agent by OpenAI ([github.com/openai/codex](https://github.com/openai/codex)) — Apache 2.0
-- **Gemini CLI** — CLI coding agent by Google ([google-gemini.github.io](https://google-gemini.github.io)) — Google ToS
-
-### LLM & AI
-- **llama.cpp** — LLM inference ([github.com/ggerganov/llama.cpp](https://github.com/ggerganov/llama.cpp)) — MIT
-- **vLLM** — High-throughput LLM serving ([github.com/vllm-project/vllm](https://github.com/vllm-project/vllm)) — Apache 2.0
-- **lm-eval-harness** — LLM evaluation ([github.com/EleutherAI/lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness)) — MIT
-- **DSPy** — Declarative LM programming ([github.com/stanfordnlp/dspy](https://github.com/stanfordnlp/dspy)) — MIT
-- **Nous Research** — Model training and evaluation tools ([nousresearch.com](https://nousresearch.com)) — Various OSS licenses
-
-### Cross-ISA & Emulation
-- **QEMU** — Machine emulator ([qemu.org](https://qemu.org)) — GPL v2
-- **Box64** — x86_64 emulator for ARM64 ([github.com/ptitSeb/box64](https://github.com/ptitSeb/box64)) — MIT
-- **FEX** — x86 emulator for ARM ([github.com/FEX-Emu/FEX](https://github.com/FEX-Emu/FEX)) — MIT
-
-### Package Management
-- **Gentoo Linux** — Source-based distribution ([gentoo.org](https://gentoo.org)) — GPL v2
-- **Portage** — Package management system ([wiki.gentoo.org](https://wiki.gentoo.org/wiki/Portage)) — GPL v2
-
-### Research & Development
-- **arXiv** — Open access to scholarly articles ([arxiv.org](https://arxiv.org)) — Cornell University
-- **Weights & Biases** — ML experiment tracking ([wandb.ai](https://wandb.ai)) — MIT (client)
+```
+bootstrap-tools.sh   — clones all third-party tools from upstream; safe to re-run
+CREDITS.md           — full attribution for all third-party projects
+docs/                — architecture and integration notes
+```
 
 ## Getting Started
 
 ```bash
-# List available factory tools
-bash scripts/pleiades-factory-tools.sh list
+# Clone all third-party tools from their upstream repos
+bash bootstrap-tools.sh
 
-# Check tool installation status
-bash scripts/pleiades-factory-tools.sh status
+# Update existing tool clones
+bash bootstrap-tools.sh --update
 ```
+
+## Tool Categories
+
+- **Binary lifting / reverse engineering** — angr, Ghidra, remill, mcsema, ddisasm, RetroWrite, rev.ng
+- **Cross-ISA emulation** — FEX, Box64
+- **AI agents and evaluation harnesses** — OpenHands, Hermes, CoEvoSkills, SkillGen, SkillX
+- **Memory and context** — MemOS, DeepCode, ai-memory
+- **MCP / API integration** — jcodemunch-mcp, fastmcp, fastapi-mcp, openapi-mcp-codegen
+- **Code analysis** — paper2code, repomix, codegraph, gitingest
+- **Security research** — LUKSbox, opensquilla
+
+See [CREDITS.md](CREDITS.md) for the complete list with licenses and upstream sources.
+
+## Vendoring Status
+
+This repository does **not** vendor third-party tools. `bootstrap-tools.sh` clones each tool from its upstream repository at setup time. No third-party source code is committed here.
+
+Each component remains governed by its upstream license. Review [CREDITS.md](CREDITS.md) before use in your context.
+
+## Credential Statement
+
+Credentials were stripped before this public push. API keys, tokens, and secrets exist only in the local operator environment.
+
+Never commit:
+- `.env` files or environment variable dumps
+- API keys, OAuth tokens, or GitHub PATs
+- SSH private keys or certificates
+- Model provider credentials
+- Private evidence archives
 
 ## License
 
-The Pleiades-sourced content in this repository is provided under the MIT License. Each integrated third-party component is subject to its own license as noted in the credits above.
+MIT — see [LICENSE](LICENSE).
 
+## Security
 
-## Framework Integration
-
-This project uses the [agents-best-practices](https://github.com/DenisSergeevitch/agents-best-practices) framework for all agent interactions. See `AGENTS.md` for the full operating contract and [Zheke32174/pleiades](https://github.com/Zheke32174/pleiades) for the parent project.
-
-### Cross-CLI Harness
-
-All tools in this stack are registered across Claude Code, Codex CLI, Gemini CLI, and OpenCode via shared MCP configurations and skill symlinks. Run `/workspaces/gentoo/scripts/pleiades-wire-mcp.sh` to reconfigure all CLIs.
-
-### Credential Safety
-
-Credentials were stripped before this public push. API keys, tokens, and secrets are only in the local environment.
+See [SECURITY.md](SECURITY.md).
