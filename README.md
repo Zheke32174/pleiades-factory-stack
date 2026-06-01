@@ -77,3 +77,16 @@ bash scripts/pleiades-factory-tools.sh status
 ## License
 
 The Pleiades-sourced content in this repository is provided under the MIT License. Each integrated third-party component is subject to its own license as noted in the credits above.
+
+
+## Framework Integration
+
+This project uses the [agents-best-practices](https://github.com/DenisSergeevitch/agents-best-practices) framework for all agent interactions. See `AGENTS.md` for the full operating contract and [Zheke32174/pleiades](https://github.com/Zheke32174/pleiades) for the parent project.
+
+### Cross-CLI Harness
+
+All tools in this stack are registered across Claude Code, Codex CLI, Gemini CLI, and OpenCode via shared MCP configurations and skill symlinks. Run `/workspaces/gentoo/scripts/pleiades-wire-mcp.sh` to reconfigure all CLIs.
+
+### Credential Safety
+
+Credentials were stripped before this public push. API keys, tokens, and secrets are only in the local environment.
