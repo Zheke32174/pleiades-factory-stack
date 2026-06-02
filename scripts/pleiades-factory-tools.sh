@@ -1,7 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
-ROOT="${PLEIADES_GENTOO_PROJECT_ROOT:-/workspaces/gentoo}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="${PLEIADES_GENTOO_PROJECT_ROOT:-$(dirname "$SCRIPT_DIR")}"
 TOOLS_ROOT="${PLEIADES_FACTORY_TOOLS_ROOT:-$ROOT/tools}"
 MANIFEST="${PLEIADES_FACTORY_TOOL_MANIFEST:-$ROOT/.octo/factory/toolchain.json}"
 
