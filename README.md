@@ -1,8 +1,8 @@
 # Pleiades Factory Stack
 
-Toolchain integration, LLM deployment, cross-ISA build pipeline, and research automation helpers.
+Bootstrap scripts and configuration for the Pleiades research toolchain: binary analysis, cross-ISA emulation, and AI/LLM agent integration. Run `bootstrap-tools.sh` to clone all third-party tools from their upstream repos.
 
-Part of the [Pleiades](https://github.com/Zheke32174/pleiades) ecosystem — a defensive container lab for host-protection research and forensic evidence collection.
+Part of the [Pleiades](https://github.com/Zheke32174/pleiades) ecosystem.
 
 ## Repository Map
 
@@ -46,30 +46,16 @@ See [CREDITS.md](CREDITS.md) for the complete list with licenses and upstream so
 
 ## Vendoring
 
-This repository does **not** vendor third-party tools. `bootstrap-tools.sh` clones each tool from its upstream repository at setup time. No third-party source code is committed here.
-
-Each component is governed by its upstream license. Review [CREDITS.md](CREDITS.md) before use in your context.
+No third-party source code is committed here. `bootstrap-tools.sh` clones each tool from its upstream repo at setup time, so each component stays governed by its own license. Review [CREDITS.md](CREDITS.md) before use.
 
 ## Secrets and Credentials
 
-No credentials, API keys, tokens, or secrets are committed to this repository. If you fork or adapt this project, never commit:
+No credentials or secrets are committed to this repository. If you fork it, keep `.env` files, API keys, OAuth tokens, SSH keys, and private evidence archives out of version control.
 
-- `.env` files or environment variable dumps
-- API keys or OAuth tokens
-- SSH private keys or certificates
-- Model provider credentials
-- Private evidence archives
+## AI Assistance
 
-## AI Assistance Disclosure
+Documentation and scaffolding were partly drafted with Claude (Anthropic) and ChatGPT (OpenAI). Every third-party tool still needs to be credited to its original author regardless of how scaffolding was generated — see [CREDITS.md](CREDITS.md).
 
-Parts of this project's documentation, planning notes, cleanup checklists, and script scaffolding were developed with assistance from AI tools, including Claude by Anthropic and ChatGPT by OpenAI.
+---
 
-Human maintainers are responsible for reviewing, testing, security boundaries, attribution, and final repository contents. AI assistance does not replace upstream attribution — every third-party tool must still be credited to its original developer or organization.
-
-## License
-
-MIT — see [LICENSE](LICENSE).
-
-## Security
-
-See [SECURITY.md](SECURITY.md).
+MIT — [LICENSE](LICENSE) · [SECURITY.md](SECURITY.md)
