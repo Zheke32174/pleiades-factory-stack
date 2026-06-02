@@ -2,16 +2,17 @@
 
 Toolchain integration, LLM deployment, cross-ISA build pipeline, and research automation helpers.
 
-Part of the [Pleiades](https://github.com/Zheke32174/pleiades) ecosystem — an owner-authorized defensive container lab.
+Part of the [Pleiades](https://github.com/Zheke32174/pleiades) ecosystem — a defensive container lab for host-protection research and forensic evidence collection.
 
 ## Repository Map
 
-| Repo | Purpose |
-|------|---------|
-| [`pleiades`](https://github.com/Zheke32174/pleiades) | Host scripts and agent suite |
-| [`pleiades-container`](https://github.com/Zheke32174/pleiades-container) | Gentoo `systemd-nspawn` container layer |
-| **`pleiades-factory-stack`** (this repo) | Tooling, AI/LLM integration, cross-ISA research helpers |
-
+| Repo | Status | Purpose |
+|------|--------|---------|
+| [`pleiades`](https://github.com/Zheke32174/pleiades) | Release-track | Host scripts and agent suite |
+| [`pleiades-container`](https://github.com/Zheke32174/pleiades-container) | Release-track | Gentoo `systemd-nspawn` container layer |
+| **`pleiades-factory-stack`** (this repo) | Release-track | Tooling, AI/LLM integration, cross-ISA research helpers |
+| `pleiades-factory` | Private staging | Future factory orchestration work; not public-ready yet |
+| `pleiades-evidence` | Private forever | Forensic evidence archive — never public |
 
 ## What's Here
 
@@ -43,22 +44,27 @@ bash bootstrap-tools.sh --update
 
 See [CREDITS.md](CREDITS.md) for the complete list with licenses and upstream sources.
 
-## Vendoring Status
+## Vendoring
 
 This repository does **not** vendor third-party tools. `bootstrap-tools.sh` clones each tool from its upstream repository at setup time. No third-party source code is committed here.
 
-Each component remains governed by its upstream license. Review [CREDITS.md](CREDITS.md) before use in your context.
+Each component is governed by its upstream license. Review [CREDITS.md](CREDITS.md) before use in your context.
 
-## Credential Statement
+## Secrets and Credentials
 
-Credentials were stripped before this public push. API keys, tokens, and secrets exist only in the local operator environment.
+No credentials, API keys, tokens, or secrets are committed to this repository. If you fork or adapt this project, never commit:
 
-Never commit:
 - `.env` files or environment variable dumps
-- API keys, OAuth tokens, or GitHub PATs
+- API keys or OAuth tokens
 - SSH private keys or certificates
 - Model provider credentials
 - Private evidence archives
+
+## AI Assistance Disclosure
+
+Parts of this project's documentation, planning notes, cleanup checklists, and script scaffolding were developed with assistance from AI tools, including Claude by Anthropic and ChatGPT by OpenAI.
+
+Human maintainers are responsible for reviewing, testing, security boundaries, attribution, and final repository contents. AI assistance does not replace upstream attribution — every third-party tool must still be credited to its original developer or organization.
 
 ## License
 
