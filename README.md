@@ -11,7 +11,7 @@ Part of the [Pleiades](https://github.com/Zheke32174/pleiades) ecosystem — an 
 | [`pleiades`](https://github.com/Zheke32174/pleiades) | Host scripts and agent suite |
 | [`pleiades-container`](https://github.com/Zheke32174/pleiades-container) | Gentoo `systemd-nspawn` container layer |
 | **`pleiades-factory-stack`** (this repo) | Tooling, AI/LLM integration, cross-ISA research helpers |
-| `pleiades-evidence` | Private evidence archive — never public |
+
 
 ## What's Here
 
