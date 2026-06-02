@@ -62,6 +62,8 @@ clone_or_update CodexSaver        https://github.com/fendouai/CodexSaver
 clone_or_update ShadowCat         https://github.com/unprovable/ShadowCat
 clone_or_update piia-engram       https://github.com/Patdolitse/piia-engram
 clone_or_update Photo-agents      https://github.com/jmerelnyc/Photo-agents
+clone_or_update agency-swarm      https://github.com/VRSEN/agency-swarm.git
+clone_or_update OpenSwarm         https://github.com/VRSEN/OpenSwarm.git
 
 # ── Memory / Context ─────────────────────────────────────────────────────────
 clone_or_update MemOS             https://github.com/MemTensor/MemOS.git

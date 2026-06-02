@@ -47,6 +47,8 @@ See `THIRD_PARTY_NOTICES.md` for the formal statement.
 | ShadowCat | unprovable | MIT | https://github.com/unprovable/ShadowCat | cloned at setup time | No | No | N/A |
 | piia-engram | Patdolitse | MIT | https://github.com/Patdolitse/piia-engram | cloned at setup time | No | No | N/A |
 | Photo-agents | jmerelnyc | MIT | https://github.com/jmerelnyc/Photo-agents | cloned at setup time | No | No | N/A |
+| agency-swarm | VRSEN | MIT | https://github.com/VRSEN/agency-swarm | cloned at setup time | No | No | N/A |
+| OpenSwarm | VRSEN | MIT | https://github.com/VRSEN/OpenSwarm | cloned at setup time | No | No | N/A |
 
 ## Memory / Context
 
