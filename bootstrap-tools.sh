@@ -1,15 +1,14 @@
-#!/usr/bin/env bash
+#!/data/data/com.termux/files/usr/bin/env bash
 # bootstrap-tools.sh — Clone all third-party tools into tools/
-#
-# Run once on a new machine after cloning pleiades-factory-stack.
-# Safe to re-run: skips dirs that already exist.
-#
-# Usage:
-#   bash bootstrap-tools.sh [--update]   # --update: git pull each existing tool
-
+source "${PLEIADES_TERMUX_LIB:-}" 2>/dev/null || true
 set -euo pipefail
 
-TOOLS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/tools"
+# Termux: override tools dir
+if [[ "${PLEIADES_ENV:-}" == "termux" ]]; then
+  TOOLS_DIR="${PLEIADES_TOOLS:-${HOME}/pleiades/tools}"
+else
+  TOOLS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/tools"
+fi
 UPDATE=false
 [[ "${1:-}" == "--update" ]] && UPDATE=true
 
