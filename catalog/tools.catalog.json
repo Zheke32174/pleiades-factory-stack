@@ -39,17 +39,17 @@
     {"name":"ai-memory","url":"https://github.com/akitaonrails/ai-memory.git","category":"memory","profiles":["memory","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
     {"name":"DeepCode","url":"https://github.com/HKUDS/DeepCode.git","category":"memory","profiles":["memory","code-intelligence","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
 
-    {"name":"jcodemunch-mcp","url":"https://github.com/jgravelle/jcodemunch-mcp.git","category":"mcp","profiles":["core","mcp","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
-    {"name":"fastmcp","url":"https://github.com/jlowin/fastmcp.git","category":"mcp","profiles":["core","mcp","all"],"ref":null,"license_hint":"Apache-2.0","license_review":"required"},
+    {"name":"jcodemunch-mcp","url":"https://github.com/jgravelle/jcodemunch-mcp.git","category":"mcp","profiles":["core","mcp","termux","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"fastmcp","url":"https://github.com/jlowin/fastmcp.git","category":"mcp","profiles":["core","mcp","termux","all"],"ref":null,"license_hint":"Apache-2.0","license_review":"required"},
     {"name":"fastapi_mcp","url":"https://github.com/tadata-org/fastapi_mcp.git","category":"mcp","profiles":["mcp","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
     {"name":"openapi-mcp-codegen","url":"https://github.com/cnoe-io/openapi-mcp-codegen.git","category":"mcp","profiles":["mcp","all"],"ref":null,"license_hint":"Apache-2.0","license_review":"required"},
     {"name":"files-sdk","url":"https://github.com/haydenbleasel/files-sdk.git","category":"mcp","profiles":["mcp","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
 
     {"name":"paper2code","url":"https://github.com/PrathamLearnsToCode/paper2code.git","category":"code-intelligence","profiles":["code-intelligence","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
-    {"name":"codegraph","url":"https://github.com/colbymchenry/codegraph.git","category":"code-intelligence","profiles":["core","code-intelligence","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"codegraph","url":"https://github.com/colbymchenry/codegraph.git","category":"code-intelligence","profiles":["core","code-intelligence","termux","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
     {"name":"codeindex","url":"https://github.com/scheidydude/codeindex.git","category":"code-intelligence","profiles":["code-intelligence","all"],"ref":null,"license_hint":"unverified","license_review":"required"},
-    {"name":"repomix","url":"https://github.com/yamadashy/repomix.git","category":"code-intelligence","profiles":["core","code-intelligence","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
-    {"name":"gitingest","url":"https://github.com/coderamp-labs/gitingest.git","category":"code-intelligence","profiles":["core","code-intelligence","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"repomix","url":"https://github.com/yamadashy/repomix.git","category":"code-intelligence","profiles":["core","code-intelligence","termux","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"gitingest","url":"https://github.com/coderamp-labs/gitingest.git","category":"code-intelligence","profiles":["core","code-intelligence","termux","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
     {"name":"smallcode","url":"https://github.com/Doorman11991/smallcode.git","category":"code-intelligence","profiles":["code-intelligence","all"],"ref":null,"license_hint":"unverified","license_review":"required"},
     {"name":"auto-identity-remove","url":"https://github.com/stephenlthorn/auto-identity-remove.git","category":"code-intelligence","profiles":["code-intelligence","all"],"ref":null,"license_hint":"unverified","license_review":"required"},
 
