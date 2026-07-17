@@ -1,0 +1,42 @@
+apiVersion: modos.pleiades/v1alpha1
+kind: Component
+metadata:
+  name: pleiades-forge-tooling-stack
+  repository: Zheke32174/pleiades-factory-stack
+  visibility: public
+  lifecycle: operational
+  defaultBranch: main
+spec:
+  roles:
+    - tooling-forge
+    - model-integration
+    - research-helper-stack
+    - improvement-candidate-producer
+  authority: proposal
+  inputs:
+    - objectives
+    - source-artifacts
+    - model-routes
+    - evaluation-contracts
+  outputs:
+    - build-artifacts
+    - implementation-candidates
+    - test-receipts
+    - promotion-proposals
+  capabilitiesProvided:
+    - forge.artifact.build
+    - forge.candidate.propose
+    - evaluation.execute
+    - model.route.propose
+  capabilitiesRequired:
+    - workspace.isolated
+    - artifact.read
+    - artifact.write.proposed
+    - ghost.world.execute
+  dataClasses:
+    - public
+    - internal
+    - untrusted
+  failurePolicy: quarantine
+  promotionPolicy: evidence-gated
+  notes: Factory output remains experimental until validated and promoted; it cannot mutate canonical MODOS state directly.
