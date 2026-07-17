@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile Python and shell
+        run: |
+          python3 -m py_compile scripts/toolchain.py tests/test_toolchain.py
+          bash -n bootstrap-tools.sh
+
+      - name: Validate catalog
+        run: python3 scripts/toolchain.py validate
+
+      - name: Run unit tests
+        run: python3 -m unittest discover -s tests -v
+
+      - name: Verify profile planning
+        run: |
+          python3 scripts/toolchain.py plan --profile core
+          python3 scripts/toolchain.py plan --profile memory
+          python3 scripts/toolchain.py plan --tool repomix
+
+      - name: Repository boundary checks
+        run: |
+          set -euo pipefail
+          ! grep -RInE '^#!/data/data/com\.termux|git[[:space:]]+clone.*2>/dev/null|update failed \(skipping\)|clone failed' bootstrap-tools.sh scripts README.md
+          ! find tools state -type f -print -quit 2>/dev/null | grep -q .
+          python3 -m json.tool catalog/tools.catalog.json >/dev/null
+          grep -Fq 'license_review' catalog/tools.catalog.json
+          grep -Fq 'unpinned_requires_explicit_floating_mode' catalog/tools.catalog.json
