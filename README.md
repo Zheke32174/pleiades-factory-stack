@@ -1,61 +1,166 @@
 # Pleiades Factory Stack
 
-Bootstrap scripts and configuration for the Pleiades research toolchain: binary analysis, cross-ISA emulation, and AI/LLM agent integration. Run `bootstrap-tools.sh` to clone all third-party tools from their upstream repos.
+A manifest-driven source catalog and synchronization layer for Pleiades research tools.
 
-Part of the [Pleiades](https://github.com/Zheke32174/pleiades) ecosystem.
+The repository does not treat “clone a pile of latest branches” as a reproducible toolchain. It separates:
 
-## Repository Map
+- **catalog** — what projects are relevant and why;
+- **lock** — the exact upstream commits selected for a reproducible checkout;
+- **local state** — what is actually present under `tools/`;
+- **integration** — a later, separately reviewed decision to build or expose a tool.
 
-| Repo | Status | Purpose |
-|------|--------|---------|
-| [`pleiades`](https://github.com/Zheke32174/pleiades) | Release-track | Host scripts and agent suite |
-| [`pleiades-container`](https://github.com/Zheke32174/pleiades-container) | Release-track | Gentoo `systemd-nspawn` container layer |
-| **`pleiades-factory-stack`** (this repo) | Release-track | Tooling, AI/LLM integration, cross-ISA research helpers |
-| `pleiades-factory` | Private staging | Future factory orchestration work; not public-ready yet |
-| `pleiades-evidence` | Private forever | Forensic evidence archive — never public |
+## Current status
 
-## What's Here
+Active research infrastructure, not a production package manager.
 
+The current implementation:
+
+- validates tool names, profiles, categories, HTTPS upstream URLs, and review metadata;
+- supports small functional profiles instead of cloning every project by default;
+- resolves exact upstream commit SHAs into a lock file;
+- checks out pinned commits in detached HEAD state;
+- rejects wrong-origin repositories and dirty trees by default;
+- records actual checkout state and failures;
+- never silently reports a failed clone as success;
+- requires `--floating` before using an unpinned upstream head;
+- clones source only—it does not build, execute, install, or grant capabilities;
+- keeps Termux behavior in the separate Termux-specific repository.
+
+## Layout
+
+```text
+catalog/tools.catalog.json     project inventory, profiles, URL, license-review state
+catalog/tools.lock.json        generated exact commit pins; commit this after review
+scripts/toolchain.py           validate, plan, lock, and sync engine
+bootstrap-tools.sh             compatibility wrapper for `toolchain.py sync`
+tools/                         local source checkouts; ignored
+state/tools-state.json         actual checkout report; ignored
+CREDITS.md                     attribution and license-review boundary
+docs/                          research and integration notes
 ```
-bootstrap-tools.sh   — clones all third-party tools from upstream; safe to re-run
-CREDITS.md           — full attribution for all third-party projects
-docs/                — architecture and integration notes
-```
 
-## Getting Started
+## Validate the catalog
 
 ```bash
-# Clone all third-party tools from their upstream repos
-bash bootstrap-tools.sh
-
-# Update existing tool clones
-bash bootstrap-tools.sh --update
+python3 scripts/toolchain.py validate
 ```
 
-## Tool Categories
+## Inspect a profile
 
-- **Binary lifting / reverse engineering** — angr, Ghidra, remill, mcsema, ddisasm, RetroWrite, rev.ng
-- **Cross-ISA emulation** — FEX, Box64
-- **AI agents and evaluation harnesses** — OpenHands, Hermes, CoEvoSkills, SkillGen, SkillX
-- **Memory and context** — MemOS, DeepCode, ai-memory
-- **MCP / API integration** — jcodemunch-mcp, fastmcp, fastapi-mcp, openapi-mcp-codegen
-- **Code analysis** — paper2code, repomix, codegraph, gitingest
-- **Security research** — LUKSbox, opensquilla
+The default `core` profile is deliberately small.
 
-See [CREDITS.md](CREDITS.md) for the complete list with licenses and upstream sources.
+```bash
+python3 scripts/toolchain.py plan
+python3 scripts/toolchain.py plan --profile memory
+python3 scripts/toolchain.py plan --profile binary-analysis
+python3 scripts/toolchain.py plan --profile all
+```
 
-## Vendoring
+A named tool can be selected directly:
 
-No third-party source code is committed here. `bootstrap-tools.sh` clones each tool from its upstream repo at setup time, so each component stays governed by its own license. Review [CREDITS.md](CREDITS.md) before use.
+```bash
+python3 scripts/toolchain.py plan --tool repomix
+```
 
-## Secrets and Credentials
+## Create a reproducible lock
 
-No credentials or secrets are committed to this repository. If you fork it, keep `.env` files, API keys, OAuth tokens, SSH keys, and private evidence archives out of version control.
+Resolve the current upstream heads for the selected profile:
 
-## AI Assistance
+```bash
+python3 scripts/toolchain.py lock --profile core
+```
 
-Documentation and scaffolding were partly drafted with Claude (Anthropic) and ChatGPT (OpenAI). Every third-party tool still needs to be credited to its original author regardless of how scaffolding was generated — see [CREDITS.md](CREDITS.md).
+Review and commit `catalog/tools.lock.json`. The lock records exact 40-character commit SHAs. Regenerating it is an explicit dependency update, not a side effect of routine startup.
 
----
+Larger examples:
 
-MIT — [LICENSE](LICENSE) · [SECURITY.md](SECURITY.md)
+```bash
+python3 scripts/toolchain.py lock --profile agents --profile memory
+python3 scripts/toolchain.py lock --profile all --keep-going
+```
+
+## Synchronize local source
+
+With a reviewed lock:
+
+```bash
+python3 scripts/toolchain.py sync --profile core
+```
+
+The compatibility wrapper performs the same locked core sync:
+
+```bash
+bash bootstrap-tools.sh
+```
+
+To update existing checkouts to the commits in a changed lock:
+
+```bash
+python3 scripts/toolchain.py sync --profile core --update
+```
+
+Unpinned research is possible only through an explicit escape hatch:
+
+```bash
+python3 scripts/toolchain.py sync --profile core --floating
+```
+
+Floating mode is useful for exploration and unsuitable as a reproducible build input.
+
+## Failure behavior
+
+The default is fail-fast. `--keep-going` attempts the rest of the selection and returns nonzero if any tool failed:
+
+```bash
+python3 scripts/toolchain.py sync --profile all --keep-going
+```
+
+Every run writes `state/tools-state.json` with successes, actual commit SHAs, and failures. A dirty checkout, unexpected origin URL, invalid catalog, missing lock entry, or failed Git command is surfaced rather than converted into a cheerful “done.”
+
+## Profiles
+
+Current profiles include:
+
+- `core`
+- `agents`
+- `continual`
+- `memory`
+- `mcp`
+- `code-intelligence`
+- `binary-analysis`
+- `cross-isa`
+- `security-research`
+- `runtime`
+- `developer-tools`
+- `reference`
+- `all`
+
+Presence in a profile means “worth evaluating,” not “approved to execute.”
+
+## License and provenance
+
+`license_hint` values in the catalog were carried forward from the previous credits file and remain **review-required** unless explicitly marked verified. Upstream licenses can change, dependencies can introduce additional terms, and local source cloning is not “binary-only use.”
+
+Before modifying, redistributing, embedding, or exposing a tool as a service, review its exact locked commit and preserve all applicable notices. See [CREDITS.md](CREDITS.md).
+
+## Pleiades integration boundary
+
+This repository supplies candidates and exact source provenance. It should later feed:
+
+- the polyglot package registry;
+- reproducible Nix environments;
+- isolated build/test sandboxes;
+- the continual harness evaluation queue;
+- signed integration manifests;
+- the cognitive coprocessor's approved tool catalog.
+
+No catalog entry should become a callable Pleiades capability merely because its repository cloned successfully.
+
+## Related repositories
+
+- [`pleiades`](https://github.com/Zheke32174/pleiades) — authority, policy, learning, and runtime architecture
+- [`pleiades-container`](https://github.com/Zheke32174/pleiades-container) — Linux substrate
+- [`pleiades-factory`](https://github.com/Zheke32174/pleiades-factory) — future private orchestration and promotion work
+- [`pleiades-factory-stack-termux`](https://github.com/Zheke32174/pleiades-factory-stack-termux) — Android/Termux-specific adaptation
+
+MIT — see [LICENSE](LICENSE). Third-party projects retain their own licenses.
