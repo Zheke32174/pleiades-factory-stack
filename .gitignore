@@ -6,6 +6,12 @@ __pycache__/
 .vscode/
 .idea/
 .env
+.env.*
+!.env.example
 
-# Third-party tools — installed by bootstrap-tools.sh, not vendored
+# Third-party source checkouts and generated state are local artifacts.
 tools/
+state/
+
+# Temporary lock writes; the completed catalog/tools.lock.json is intended to be tracked.
+catalog/*.tmp
