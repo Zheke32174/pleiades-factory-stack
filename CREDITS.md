@@ -1,137 +1,51 @@
-# Credits and Third-Party Attribution
+# Third-Party Credits and Review Status
 
-Every external project, developer, or organization whose work is cloned,
-installed, wrapped, or referenced by pleiades-factory-stack is listed here.
+Pleiades Factory Stack is a **manifest and synchronization layer** for third-party research projects. It does not vendor those projects into this repository, but it does clone their source code into a local ignored `tools/` directory when an operator requests it.
 
-**No third-party source code is vendored in this repository.** All tools are
-cloned or installed from upstream at setup time via `bootstrap-tools.sh`.
-See `THIRD_PARTY_NOTICES.md` for the formal statement.
+The canonical inventory is [`catalog/tools.catalog.json`](catalog/tools.catalog.json). Each entry records:
 
----
+- project name;
+- upstream HTTPS URL;
+- functional category and optional profiles;
+- an optional pinned ref;
+- a license hint carried forward from the earlier catalog;
+- an explicit license-review state.
 
-## Binary Lifting / Reverse Engineering
+## Important license boundary
 
-| Project | Author / Org | License | Source URL | Usage Type | Vendored? | Modified? | Local Path |
-|---------|-------------|---------|-----------|-----------|-----------|-----------|------------|
-| angr | angr project | BSD-2-Clause | https://github.com/angr/angr | cloned at setup time | No | No | N/A |
-| ghidra | NSA / National Security Agency | Apache-2.0 | https://github.com/NationalSecurityAgency/ghidra | cloned at setup time | No | No | N/A |
-| remill | Trail of Bits | Apache-2.0 | https://github.com/lifting-bits/remill | cloned at setup time | No | No | N/A |
-| mcsema | Trail of Bits | Apache-2.0 | https://github.com/lifting-bits/mcsema | cloned at setup time | No | No | N/A |
-| ddisasm | GrammaTech | **AGPL-3.0** | https://github.com/GrammaTech/ddisasm | cloned at setup time — **AGPL; binary-only use, no source vendored** | No | No | N/A |
-| retrowrite | HexHive (EPFL) | MIT | https://github.com/HexHive/retrowrite | cloned at setup time | No | No | N/A |
-| revng | rev.ng Labs | **GPL-2.0** | https://github.com/revng/revng | cloned at setup time — **GPL-2.0; binary-only use, no source vendored** | No | No | N/A |
-| resym | lt-asset | MIT | https://github.com/lt-asset/resym | cloned at setup time | No | No | N/A |
-| rmux | Helvesec | MIT | https://github.com/Helvesec/rmux | cloned at setup time | No | No | N/A |
+A `license_hint` is not a legal conclusion and is not treated as verified unless the catalog explicitly says `"license_review": "verified"`.
 
-## Cross-ISA Emulation
+Before a tool is:
 
-| Project | Author / Org | License | Source URL | Usage Type | Vendored? | Modified? | Local Path |
-|---------|-------------|---------|-----------|-----------|-----------|-----------|------------|
-| FEX | FEX-Emu | MIT | https://github.com/FEX-Emu/FEX | cloned at setup time | No | No | N/A |
-| box64 | ptitSeb (Sebastian Chevalier) | MIT | https://github.com/ptitSeb/box64 | cloned at setup time | No | No | N/A |
+- modified;
+- embedded into Pleiades;
+- redistributed;
+- exposed as a network service;
+- used to produce a public derivative artifact;
 
-## AI Agents / Frameworks
+review the upstream repository's current license, notices, dependency licenses, and release-specific terms. Preserve upstream attribution and notices.
 
-| Project | Author / Org | License | Source URL | Usage Type | Vendored? | Modified? | Local Path |
-|---------|-------------|---------|-----------|-----------|-----------|-----------|------------|
-| OpenHands | All-Hands-AI | MIT | https://github.com/All-Hands-AI/OpenHands | cloned at setup time | No | No | N/A |
-| hermes-agent-self-evolution | NousResearch | Apache-2.0 | https://github.com/NousResearch/hermes-agent-self-evolution | cloned at setup time | No | No | N/A |
-| CoEvoSkills | Zhang-Henry | MIT | https://github.com/Zhang-Henry/CoEvoSkills | cloned at setup time | No | No | N/A |
-| SkillGen | yccm | MIT | https://github.com/yccm/SkillGen | cloned at setup time | No | No | N/A |
-| SkillX | zjunlp | Apache-2.0 | https://github.com/zjunlp/SkillX | cloned at setup time | No | No | N/A |
-| continual-harness | sethkarten | MIT | https://github.com/sethkarten/continual-harness | cloned at setup time | No | No | N/A |
-| elephant-agent | agentic-in | Apache-2.0 | https://github.com/agentic-in/elephant-agent | cloned at setup time | No | No | N/A |
-| agent-oss | quarqlabs | MIT | https://github.com/quarqlabs/agent-oss | cloned at setup time | No | No | N/A |
-| claude-p | smithersai | MIT | https://github.com/smithersai/claude-p | cloned at setup time | No | No | N/A |
-| CodexSaver | fendouai | MIT | https://github.com/fendouai/CodexSaver | cloned at setup time | No | No | N/A |
-| ShadowCat | unprovable | MIT | https://github.com/unprovable/ShadowCat | cloned at setup time | No | No | N/A |
-| piia-engram | Patdolitse | MIT | https://github.com/Patdolitse/piia-engram | cloned at setup time | No | No | N/A |
-| Photo-agents | jmerelnyc | MIT | https://github.com/jmerelnyc/Photo-agents | cloned at setup time | No | No | N/A |
-| agency-swarm | VRSEN | MIT | https://github.com/VRSEN/agency-swarm | cloned at setup time | No | No | N/A |
-| OpenSwarm | VRSEN | MIT | https://github.com/VRSEN/OpenSwarm | cloned at setup time | No | No | N/A |
+Cloning source locally does **not** mean that only a binary is being used. Earlier documentation described several copyleft projects as “binary-only” even though `bootstrap-tools.sh` cloned their source repositories. That wording was incorrect and has been removed.
 
-## Memory / Context
+## Copyleft and network-use licenses
 
-| Project | Author / Org | License | Source URL | Usage Type | Vendored? | Modified? | Local Path |
-|---------|-------------|---------|-----------|-----------|-----------|-----------|------------|
-| MemOS | MemTensor | Apache-2.0 | https://github.com/MemTensor/MemOS | cloned at setup time | No | No | N/A |
-| ai-memory | akitaonrails | MIT | https://github.com/akitaonrails/ai-memory | cloned at setup time | No | No | N/A |
-| DeepCode | HKUDS | MIT | https://github.com/HKUDS/DeepCode | cloned at setup time | No | No | N/A |
+Projects whose catalog hints include AGPL or GPL require special attention. Local research use, modification, distribution, and network deployment can carry different obligations. Do not merge their code into Pleiades or ship modified copies until the applicable obligations are documented for that exact use.
 
-## MCP / API Integration
+## Reproducibility and provenance
 
-| Project | Author / Org | License | Source URL | Usage Type | Vendored? | Modified? | Local Path |
-|---------|-------------|---------|-----------|-----------|-----------|-----------|------------|
-| jcodemunch-mcp | jgravelle | MIT | https://github.com/jgravelle/jcodemunch-mcp | cloned at setup time; wrapped as MCP server | No | No | N/A |
-| fastmcp | jlowin (Jeremiah Lowin) | Apache-2.0 | https://github.com/jlowin/fastmcp | installed via pip; used as MCP server framework in generated servers | No | No | N/A |
-| fastapi_mcp | tadata-org | MIT | https://github.com/tadata-org/fastapi_mcp | installed via pip; optional integration | No | No | N/A |
-| openapi-mcp-codegen | cnoe-io | Apache-2.0 | https://github.com/cnoe-io/openapi-mcp-codegen | optional integration | No | No | N/A |
-| files-sdk | haydenbleasel | MIT | https://github.com/haydenbleasel/files-sdk | cloned at setup time | No | No | N/A |
+Normal synchronization should use a committed [`catalog/tools.lock.json`](catalog/tools.lock.json) containing exact 40-character commit SHAs. Floating clones require an explicit `--floating` flag and are unsuitable as reproducible build inputs.
 
-## Code Analysis / Intelligence
+Every synchronization writes `state/tools-state.json` containing the actual checked-out commit, action, category, and recorded license-review state. That file is local operational state and is not committed.
 
-| Project | Author / Org | License | Source URL | Usage Type | Vendored? | Modified? | Local Path |
-|---------|-------------|---------|-----------|-----------|-----------|-----------|------------|
-| paper2code | PrathamLearnsToCode | MIT | https://github.com/PrathamLearnsToCode/paper2code | cloned at setup time | No | No | N/A |
-| codegraph | colbymchenry | MIT | https://github.com/colbymchenry/codegraph | cloned at setup time | No | No | N/A |
-| codeindex | scheidydude | MIT | https://github.com/scheidydude/codeindex | cloned at setup time | No | No | N/A |
-| repomix | yamadashy | MIT | https://github.com/yamadashy/repomix | installed via npm; used by `pleiades-mcp-converters.sh` for repo context packing | No | No | N/A |
-| gitingest | coderamp-labs | MIT | https://github.com/coderamp-labs/gitingest | installed via pip; optional fallback for repo context packing | No | No | N/A |
-| smallcode | Doorman11991 | MIT | https://github.com/Doorman11991/smallcode | cloned at setup time | No | No | N/A |
-| auto-identity-remove | stephenlthorn | MIT | https://github.com/stephenlthorn/auto-identity-remove | cloned at setup time | No | No | N/A |
+## No execution authorization
 
-## Security / Offensive Research
+Presence in the catalog authorizes only cataloging and, when explicitly requested, cloning. It does not authorize building, executing, installing, exposing, or granting capabilities to a project. Those decisions belong to separate reviewed integration manifests and Pleiades policy.
 
-| Project | Author / Org | License | Source URL | Usage Type | Vendored? | Modified? | Local Path |
-|---------|-------------|---------|-----------|-----------|-----------|-----------|------------|
-| LUKSbox | PentHertz | **GPL-3.0** | https://github.com/PentHertz/LUKSbox | cloned at setup time — **GPL-3.0; binary-only use, no source vendored** | No | No | N/A |
-| opensquilla | OpenSquilla | MIT | https://github.com/OpenSquilla/opensquilla | cloned at setup time | No | No | N/A |
+## Complete inventory
 
-## Runtime / Language Runtimes
+For the current complete project list, categories, upstream URLs, profiles, and review states, see:
 
-| Project | Author / Org | License | Source URL | Usage Type | Vendored? | Modified? | Local Path |
-|---------|-------------|---------|-----------|-----------|-----------|-----------|------------|
-| zerolang | Vercel Labs | MIT | https://github.com/vercel-labs/zerolang | cloned at setup time | No | No | N/A |
-| zerostack | gi-dellav | MIT | https://github.com/gi-dellav/zerostack | cloned at setup time | No | No | N/A |
-| btype | tidwall | MIT | https://github.com/tidwall/btype | cloned at setup time | No | No | N/A |
-| chorus | chorus-codes | MIT | https://github.com/chorus-codes/chorus | cloned at setup time | No | No | N/A |
+- [`catalog/tools.catalog.json`](catalog/tools.catalog.json)
+- [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)
 
-## Developer Tools
-
-| Project | Author / Org | License | Source URL | Usage Type | Vendored? | Modified? | Local Path |
-|---------|-------------|---------|-----------|-----------|-----------|-----------|------------|
-| agent-rules-books | ciembor | MIT | https://github.com/ciembor/agent-rules-books | cloned at setup time | No | No | N/A |
-| WSL | Microsoft | MIT | https://github.com/microsoft/WSL | referenced only — not cloned | No | No | N/A |
-| auth.md | WorkOS | MIT | https://github.com/workos/auth.md | cloned at setup time | No | No | N/A |
-
-## Framework References
-
-| Project | Author / Org | License | Source URL | Usage Type | Vendored? | Modified? | Local Path |
-|---------|-------------|---------|-----------|-----------|-----------|-----------|------------|
-| agents-best-practices | DenisSergeevitch | MIT | https://github.com/DenisSergeevitch/agents-best-practices | structural reference in `AGENTS.md` — no source copied | No | No | N/A |
-
----
-
-## Copyleft / AGPL Notice
-
-The following tools carry copyleft licenses. In all cases, only the installed
-binary is called — no source is vendored, modified, or redistributed:
-
-| Project | License | Risk level | Handling |
-|---------|---------|------------|---------|
-| ddisasm | AGPL-3.0 | Medium — network-use copyleft may apply to modifications | Binary-only use; no source vendored |
-| revng | GPL-2.0 | Medium — copyleft applies to modifications | Binary-only use; no source vendored |
-| LUKSbox | GPL-3.0 | Medium — copyleft applies to modifications | Binary-only use; no source vendored |
-
-If you modify or redistribute any of these tools as part of a derivative work,
-review their license terms carefully before distribution.
-
----
-
-## No Vendored Third-Party Source
-
-This repository does not vendor source code from any third-party project.
-Every tool listed above is cloned or installed from its upstream source at
-setup time via `bootstrap-tools.sh`. See `THIRD_PARTY_NOTICES.md`.
-
-> All trademarks and project names are property of their respective owners.
+All trademarks and project names remain the property of their respective owners.
