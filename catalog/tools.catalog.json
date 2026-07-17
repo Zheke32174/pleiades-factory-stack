@@ -1,0 +1,68 @@
+{
+  "schema": "pleiades.factory-tool-catalog/v1",
+  "policy": {
+    "description": "Source catalog only. Cloning does not authorize execution, installation, redistribution, or license conclusions.",
+    "unpinned_requires_explicit_floating_mode": true,
+    "default_profile": "core"
+  },
+  "tools": [
+    {"name":"angr","url":"https://github.com/angr/angr.git","category":"binary-analysis","profiles":["binary-analysis","all"],"ref":null,"license_hint":"BSD-2-Clause","license_review":"required"},
+    {"name":"ghidra","url":"https://github.com/NationalSecurityAgency/ghidra.git","category":"binary-analysis","profiles":["binary-analysis","all"],"ref":null,"license_hint":"Apache-2.0","license_review":"required"},
+    {"name":"remill","url":"https://github.com/lifting-bits/remill.git","category":"binary-analysis","profiles":["binary-analysis","all"],"ref":null,"license_hint":"Apache-2.0","license_review":"required"},
+    {"name":"mcsema","url":"https://github.com/lifting-bits/mcsema.git","category":"binary-analysis","profiles":["binary-analysis","all"],"ref":null,"license_hint":"Apache-2.0","license_review":"required"},
+    {"name":"ddisasm","url":"https://github.com/GrammaTech/ddisasm.git","category":"binary-analysis","profiles":["binary-analysis","all"],"ref":null,"license_hint":"AGPL-3.0","license_review":"required"},
+    {"name":"retrowrite","url":"https://github.com/HexHive/retrowrite.git","category":"binary-analysis","profiles":["binary-analysis","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"revng","url":"https://github.com/revng/revng.git","category":"binary-analysis","profiles":["binary-analysis","all"],"ref":null,"license_hint":"GPL-2.0","license_review":"required"},
+    {"name":"resym","url":"https://github.com/lt-asset/resym.git","category":"binary-analysis","profiles":["binary-analysis","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"rmux","url":"https://github.com/Helvesec/rmux.git","category":"binary-analysis","profiles":["binary-analysis","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+
+    {"name":"FEX","url":"https://github.com/FEX-Emu/FEX.git","category":"cross-isa","profiles":["cross-isa","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"box64","url":"https://github.com/ptitSeb/box64.git","category":"cross-isa","profiles":["cross-isa","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+
+    {"name":"OpenHands","url":"https://github.com/All-Hands-AI/OpenHands.git","category":"agents","profiles":["agents","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"hermes-agent-self-evolution","url":"https://github.com/NousResearch/hermes-agent-self-evolution.git","category":"agents","profiles":["agents","continual","all"],"ref":null,"license_hint":"Apache-2.0","license_review":"required"},
+    {"name":"CoEvoSkills","url":"https://github.com/Zhang-Henry/CoEvoSkills.git","category":"agents","profiles":["agents","continual","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"SkillGen","url":"https://github.com/yccm/SkillGen.git","category":"agents","profiles":["agents","continual","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"SkillX","url":"https://github.com/zjunlp/SkillX.git","category":"agents","profiles":["agents","continual","all"],"ref":null,"license_hint":"Apache-2.0","license_review":"required"},
+    {"name":"continual-harness","url":"https://github.com/sethkarten/continual-harness.git","category":"agents","profiles":["core","agents","continual","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"elephant-agent","url":"https://github.com/agentic-in/elephant-agent.git","category":"agents","profiles":["agents","all"],"ref":null,"license_hint":"Apache-2.0","license_review":"required"},
+    {"name":"agent-oss","url":"https://github.com/quarqlabs/agent-oss.git","category":"agents","profiles":["agents","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"claude-p","url":"https://github.com/smithersai/claude-p.git","category":"agents","profiles":["agents","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"CodexSaver","url":"https://github.com/fendouai/CodexSaver.git","category":"agents","profiles":["agents","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"ShadowCat","url":"https://github.com/unprovable/ShadowCat.git","category":"agents","profiles":["agents","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"piia-engram","url":"https://github.com/Patdolitse/piia-engram.git","category":"agents","profiles":["agents","memory","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"Photo-agents","url":"https://github.com/jmerelnyc/Photo-agents.git","category":"agents","profiles":["agents","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"agency-swarm","url":"https://github.com/VRSEN/agency-swarm.git","category":"agents","profiles":["agents","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"OpenSwarm","url":"https://github.com/VRSEN/OpenSwarm.git","category":"agents","profiles":["agents","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+
+    {"name":"MemOS","url":"https://github.com/MemTensor/MemOS.git","category":"memory","profiles":["core","memory","all"],"ref":null,"license_hint":"Apache-2.0","license_review":"required"},
+    {"name":"ai-memory","url":"https://github.com/akitaonrails/ai-memory.git","category":"memory","profiles":["memory","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"DeepCode","url":"https://github.com/HKUDS/DeepCode.git","category":"memory","profiles":["memory","code-intelligence","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+
+    {"name":"jcodemunch-mcp","url":"https://github.com/jgravelle/jcodemunch-mcp.git","category":"mcp","profiles":["core","mcp","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"fastmcp","url":"https://github.com/jlowin/fastmcp.git","category":"mcp","profiles":["core","mcp","all"],"ref":null,"license_hint":"Apache-2.0","license_review":"required"},
+    {"name":"fastapi_mcp","url":"https://github.com/tadata-org/fastapi_mcp.git","category":"mcp","profiles":["mcp","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"openapi-mcp-codegen","url":"https://github.com/cnoe-io/openapi-mcp-codegen.git","category":"mcp","profiles":["mcp","all"],"ref":null,"license_hint":"Apache-2.0","license_review":"required"},
+    {"name":"files-sdk","url":"https://github.com/haydenbleasel/files-sdk.git","category":"mcp","profiles":["mcp","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+
+    {"name":"paper2code","url":"https://github.com/PrathamLearnsToCode/paper2code.git","category":"code-intelligence","profiles":["code-intelligence","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"codegraph","url":"https://github.com/colbymchenry/codegraph.git","category":"code-intelligence","profiles":["core","code-intelligence","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"codeindex","url":"https://github.com/scheidydude/codeindex.git","category":"code-intelligence","profiles":["code-intelligence","all"],"ref":null,"license_hint":"unverified","license_review":"required"},
+    {"name":"repomix","url":"https://github.com/yamadashy/repomix.git","category":"code-intelligence","profiles":["core","code-intelligence","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"gitingest","url":"https://github.com/coderamp-labs/gitingest.git","category":"code-intelligence","profiles":["core","code-intelligence","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"smallcode","url":"https://github.com/Doorman11991/smallcode.git","category":"code-intelligence","profiles":["code-intelligence","all"],"ref":null,"license_hint":"unverified","license_review":"required"},
+    {"name":"auto-identity-remove","url":"https://github.com/stephenlthorn/auto-identity-remove.git","category":"code-intelligence","profiles":["code-intelligence","all"],"ref":null,"license_hint":"unverified","license_review":"required"},
+
+    {"name":"LUKSbox","url":"https://github.com/PentHertz/LUKSbox.git","category":"security-research","profiles":["security-research","all"],"ref":null,"license_hint":"GPL-3.0","license_review":"required"},
+    {"name":"opensquilla","url":"https://github.com/OpenSquilla/opensquilla.git","category":"security-research","profiles":["security-research","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+
+    {"name":"zerolang","url":"https://github.com/vercel-labs/zerolang.git","category":"runtime","profiles":["runtime","all"],"ref":null,"license_hint":"unverified","license_review":"required"},
+    {"name":"zerostack","url":"https://github.com/gi-dellav/zerostack.git","category":"runtime","profiles":["runtime","all"],"ref":null,"license_hint":"unverified","license_review":"required"},
+    {"name":"btype","url":"https://github.com/tidwall/btype.git","category":"runtime","profiles":["runtime","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"chorus","url":"https://github.com/chorus-codes/chorus.git","category":"runtime","profiles":["runtime","all"],"ref":null,"license_hint":"unverified","license_review":"required"},
+
+    {"name":"agent-rules-books","url":"https://github.com/ciembor/agent-rules-books.git","category":"developer-tools","profiles":["developer-tools","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"auth.md","url":"https://github.com/workos/auth.md.git","category":"developer-tools","profiles":["developer-tools","all"],"ref":null,"license_hint":"MIT","license_review":"required"},
+    {"name":"WSL","url":"https://github.com/microsoft/WSL.git","category":"reference","profiles":["reference"],"ref":null,"license_hint":"MIT","license_review":"required","enabled":false,"note":"Reference-only by default because of repository size."}
+  ]
+}
