@@ -123,6 +123,13 @@ def validate_lock(lock: dict[str, Any], catalog_names: set[str]) -> dict[str, st
     return result
 
 
+def resolve_selection(profiles: list[str], names: list[str]) -> tuple[list[str], list[str]]:
+    """Apply the core default only when the caller made no explicit selection."""
+    if profiles or names:
+        return list(profiles), list(names)
+    return ["core"], []
+
+
 def select_tools(tools: list[dict[str, Any]], profiles: list[str], names: list[str]) -> list[dict[str, Any]]:
     requested_names = set(names)
     requested_profiles = set(profiles)
@@ -226,7 +233,8 @@ def command_validate(args: argparse.Namespace) -> int:
 def command_plan(args: argparse.Namespace) -> int:
     catalog = load_json(args.catalog)
     tools = validate_catalog(catalog)
-    selected = select_tools(tools, args.profile, args.tool)
+    profiles, names = resolve_selection(args.profile, args.tool)
+    selected = select_tools(tools, profiles, names)
     for tool in selected:
         status = "disabled-explicit" if not tool["enabled"] else "enabled"
         print(f"{tool['name']}\t{tool['category']}\t{status}\t{tool['url']}")
@@ -237,7 +245,8 @@ def command_plan(args: argparse.Namespace) -> int:
 def command_lock(args: argparse.Namespace) -> int:
     catalog = load_json(args.catalog)
     tools = validate_catalog(catalog)
-    selected = select_tools(tools, args.profile, args.tool)
+    profiles, names = resolve_selection(args.profile, args.tool)
+    selected = select_tools(tools, profiles, names)
     entries: dict[str, dict[str, str]] = {}
     failures: list[str] = []
     for tool in selected:
@@ -270,7 +279,8 @@ def command_lock(args: argparse.Namespace) -> int:
 def command_sync(args: argparse.Namespace) -> int:
     catalog = load_json(args.catalog)
     tools = validate_catalog(catalog)
-    selected = select_tools(tools, args.profile, args.tool)
+    profiles, names = resolve_selection(args.profile, args.tool)
+    selected = select_tools(tools, profiles, names)
     lock_entries: dict[str, str] = {}
     if args.lock.exists():
         lock_entries = validate_lock(load_json(args.lock), {tool["name"] for tool in tools})
@@ -307,7 +317,8 @@ def command_sync(args: argparse.Namespace) -> int:
         "schema": "pleiades.factory-tool-state/v1",
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "tools_dir": str(args.tools_dir.resolve()),
-        "profile": args.profile,
+        "profile": profiles,
+        "tools": names,
         "floating": args.floating,
         "results": results,
         "failures": failures,
@@ -327,7 +338,7 @@ def build_parser(root: pathlib.Path) -> argparse.ArgumentParser:
 
     for name in ("plan", "lock", "sync"):
         command = subparsers.add_parser(name)
-        command.add_argument("--profile", action="append", default=["core"])
+        command.add_argument("--profile", action="append", default=[])
         command.add_argument("--tool", action="append", default=[])
         if name in {"lock", "sync"}:
             command.add_argument("--keep-going", action="store_true")
