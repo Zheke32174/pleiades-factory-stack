@@ -32,7 +32,7 @@ The current implementation:
 catalog/tools.catalog.json     project inventory, profiles, URL, license-review state
 catalog/tools.lock.json        generated exact commit pins; commit this after review
 scripts/toolchain.py           validate, plan, lock, and sync engine
-bootstrap-tools.sh             compatibility wrapper for `toolchain.py sync`
+bootstrap-tools.sh             safe compatibility wrapper for planning/locked sync
 tools/                         local source checkouts; ignored
 state/tools-state.json         actual checkout report; ignored
 CREDITS.md                     attribution and license-review boundary
@@ -47,7 +47,7 @@ python3 scripts/toolchain.py validate
 
 ## Inspect a profile
 
-The default `core` profile is deliberately small.
+The default `core` profile is deliberately small and is applied only when no explicit profile or tool was supplied.
 
 ```bash
 python3 scripts/toolchain.py plan
@@ -56,7 +56,7 @@ python3 scripts/toolchain.py plan --profile binary-analysis
 python3 scripts/toolchain.py plan --profile all
 ```
 
-A named tool can be selected directly:
+A named tool can be selected directly. Explicit selections do not silently append the `core` profile:
 
 ```bash
 python3 scripts/toolchain.py plan --tool repomix
@@ -87,11 +87,13 @@ With a reviewed lock:
 python3 scripts/toolchain.py sync --profile core
 ```
 
-The compatibility wrapper performs the same locked core sync:
+The compatibility wrapper performs the same locked core sync when a reviewed lock exists:
 
 ```bash
 bash bootstrap-tools.sh
 ```
+
+A fresh checkout intentionally has no generated lock. In that state, no-argument bootstrap prints the non-mutating core plan and the exact lock command instead of resolving mutable upstream heads or failing halfway through bootstrap.
 
 To update existing checkouts to the commits in a changed lock:
 
@@ -115,7 +117,7 @@ The default is fail-fast. `--keep-going` attempts the rest of the selection and 
 python3 scripts/toolchain.py sync --profile all --keep-going
 ```
 
-Every run writes `state/tools-state.json` with successes, actual commit SHAs, and failures. A dirty checkout, unexpected origin URL, invalid catalog, missing lock entry, or failed Git command is surfaced rather than converted into a cheerful “done.”
+Every run writes `state/tools-state.json` with the resolved profile/tool selection, successes, actual commit SHAs, and failures. A dirty checkout, unexpected origin URL, invalid catalog, missing lock entry, or failed Git command is surfaced rather than converted into a cheerful “done.”
 
 ## Profiles
 
@@ -160,7 +162,7 @@ No catalog entry should become a callable Pleiades capability merely because its
 
 - [`pleiades`](https://github.com/Zheke32174/pleiades) — authority, policy, learning, and runtime architecture
 - [`pleiades-container`](https://github.com/Zheke32174/pleiades-container) — Linux substrate
-- [`pleiades-factory`](https://github.com/Zheke32174/pleiades-factory) — future private orchestration and promotion work
+- [`pleiades-factory`](https://github.com/Zheke32174/pleiades-factory) — private orchestration and promotion work
 - [`pleiades-factory-stack-termux`](https://github.com/Zheke32174/pleiades-factory-stack-termux) — Android/Termux-specific adaptation
 
 MIT — see [LICENSE](LICENSE). Third-party projects retain their own licenses.
