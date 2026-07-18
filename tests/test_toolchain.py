@@ -29,6 +29,25 @@ class ToolchainTests(unittest.TestCase):
         self.assertLess(len(selected), len(tools))
         self.assertTrue(all("core" in tool["profiles"] for tool in selected))
 
+    def test_core_is_default_only_without_explicit_selection(self) -> None:
+        self.assertEqual(MODULE.resolve_selection([], []), (["core"], []))
+        self.assertEqual(MODULE.resolve_selection(["memory"], []), (["memory"], []))
+        self.assertEqual(MODULE.resolve_selection([], ["repomix"]), ([], ["repomix"]))
+
+    def test_explicit_profile_does_not_append_core(self) -> None:
+        catalog = MODULE.load_json(ROOT / "catalog" / "tools.catalog.json")
+        tools = MODULE.validate_catalog(catalog)
+        profiles, names = MODULE.resolve_selection(["memory"], [])
+        selected = MODULE.select_tools(tools, profiles, names)
+        self.assertTrue(all("memory" in tool["profiles"] for tool in selected))
+
+    def test_explicit_tool_does_not_append_core(self) -> None:
+        catalog = MODULE.load_json(ROOT / "catalog" / "tools.catalog.json")
+        tools = MODULE.validate_catalog(catalog)
+        profiles, names = MODULE.resolve_selection([], ["repomix"])
+        selected = MODULE.select_tools(tools, profiles, names)
+        self.assertEqual([tool["name"] for tool in selected], ["repomix"])
+
     def test_unknown_tool_fails(self) -> None:
         catalog = MODULE.load_json(ROOT / "catalog" / "tools.catalog.json")
         tools = MODULE.validate_catalog(catalog)
