@@ -14,12 +14,15 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Compile Python and shell
         run: |
-          python3 -m py_compile scripts/toolchain.py tests/test_toolchain.py
+          python3 -m py_compile scripts/toolchain.py tests/test_toolchain.py ci/scan_public_repo.py
           bash -n bootstrap-tools.sh
 
       - name: Validate catalog
@@ -34,6 +37,9 @@ jobs:
           python3 scripts/toolchain.py plan --profile memory
           python3 scripts/toolchain.py plan --tool repomix
 
+      - name: Scan public tree and Git history
+        run: python3 ci/scan_public_repo.py
+
       - name: Repository boundary checks
         run: |
           set -euo pipefail
@@ -42,3 +48,4 @@ jobs:
           python3 -m json.tool catalog/tools.catalog.json >/dev/null
           grep -Fq 'license_review' catalog/tools.catalog.json
           grep -Fq 'unpinned_requires_explicit_floating_mode' catalog/tools.catalog.json
+          test "$(cat VERSION)" = "0.1.0"
