@@ -32,8 +32,9 @@ jobs:
           set -euo pipefail
           bash scripts/package_source.sh dist-one
           bash scripts/package_source.sh dist-two
-          for file in pleiades-factory-stack-*.tar.gz pleiades-factory-stack-*.spdx.json pleiades-factory-stack-*.build-receipt.json SHA256SUMS.txt; do
-            cmp "dist-one/$file" "dist-two/$file"
+          for first in dist-one/*; do
+            file="$(basename "$first")"
+            cmp "$first" "dist-two/$file"
           done
 
       - name: Verify checksum manifest
