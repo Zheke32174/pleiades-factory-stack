@@ -14,6 +14,40 @@ MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
 
 
+def one_tool_catalog() -> dict:
+    return {
+        "schema": MODULE.CATALOG_SCHEMA,
+        "policy": {"default_profile": "core"},
+        "tools": [
+            {
+                "name": "one",
+                "url": "https://github.com/example/project.git",
+                "category": "test",
+                "profiles": ["core"],
+                "ref": None,
+                "license_hint": "MIT",
+                "license_review": "required",
+            }
+        ],
+    }
+
+
+def valid_lock(catalog: dict) -> dict:
+    return {
+        "schema": MODULE.LOCK_SCHEMA,
+        "catalog_schema": MODULE.CATALOG_SCHEMA,
+        "catalog_sha256": MODULE.canonical_sha256(catalog),
+        "selection": {"profiles": ["core"], "tools": []},
+        "tools": {
+            "one": {
+                "commit": "a" * 40,
+                "url": "https://github.com/example/project.git",
+                "ref": "HEAD",
+            }
+        },
+    }
+
+
 class ToolchainTests(unittest.TestCase):
     def test_repository_catalog_is_valid(self) -> None:
         catalog = MODULE.load_json(ROOT / "catalog" / "tools.catalog.json")
@@ -55,41 +89,54 @@ class ToolchainTests(unittest.TestCase):
             MODULE.select_tools(tools, [], ["does-not-exist"])
 
     def test_duplicate_url_fails(self) -> None:
-        catalog = {
-            "schema": MODULE.CATALOG_SCHEMA,
-            "tools": [
-                {
-                    "name": "one",
-                    "url": "https://github.com/example/project.git",
-                    "category": "test",
-                    "profiles": ["core"],
-                    "ref": None,
-                    "license_hint": "unverified",
-                    "license_review": "required",
-                },
-                {
-                    "name": "two",
-                    "url": "https://github.com/example/project",
-                    "category": "test",
-                    "profiles": ["core"],
-                    "ref": None,
-                    "license_hint": "unverified",
-                    "license_review": "required",
-                },
-            ],
-        }
+        catalog = one_tool_catalog()
+        duplicate = dict(catalog["tools"][0])
+        duplicate["name"] = "two"
+        duplicate["url"] = "https://github.com/example/project"
+        catalog["tools"].append(duplicate)
         with self.assertRaises(MODULE.ToolchainError):
             MODULE.validate_catalog(catalog)
 
+    def test_valid_lock_is_bound_to_catalog_url_ref_and_selection(self) -> None:
+        catalog = one_tool_catalog()
+        tools = MODULE.validate_catalog(catalog)
+        self.assertEqual(MODULE.validate_lock(valid_lock(catalog), catalog, tools), {"one": "a" * 40})
+
     def test_lock_requires_exact_lowercase_commit(self) -> None:
+        catalog = one_tool_catalog()
+        tools = MODULE.validate_catalog(catalog)
+        lock = valid_lock(catalog)
+        lock["tools"]["one"]["commit"] = "main"
         with self.assertRaises(MODULE.ToolchainError):
-            MODULE.validate_lock(
-                {
-                    "schema": MODULE.LOCK_SCHEMA,
-                    "tools": {"one": {"commit": "main"}},
-                },
-                {"one"},
-            )
+            MODULE.validate_lock(lock, catalog, tools)
+
+    def test_lock_rejects_catalog_drift(self) -> None:
+        catalog = one_tool_catalog()
+        tools = MODULE.validate_catalog(catalog)
+        lock = valid_lock(catalog)
+        catalog["policy"]["default_profile"] = "changed"
+        with self.assertRaises(MODULE.ToolchainError):
+            MODULE.validate_lock(lock, catalog, tools)
+
+    def test_lock_rejects_upstream_url_or_ref_drift(self) -> None:
+        catalog = one_tool_catalog()
+        tools = MODULE.validate_catalog(catalog)
+        lock = valid_lock(catalog)
+        lock["tools"]["one"]["url"] = "https://github.com/example/other.git"
+        with self.assertRaises(MODULE.ToolchainError):
+            MODULE.validate_lock(lock, catalog, tools)
+        lock = valid_lock(catalog)
+        lock["tools"]["one"]["ref"] = "main"
+        with self.assertRaises(MODULE.ToolchainError):
+            MODULE.validate_lock(lock, catalog, tools)
+
+    def test_lock_entries_must_match_recorded_selection(self) -> None:
+        catalog = one_tool_catalog()
+        tools = MODULE.validate_catalog(catalog)
+        lock = valid_lock(catalog)
+        lock["tools"] = {}
+        with self.assertRaises(MODULE.ToolchainError):
+            MODULE.validate_lock(lock, catalog, tools)
 
     def test_atomic_json_write(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
