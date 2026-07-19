@@ -1,0 +1,50 @@
+name: distribution candidate
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: distribution-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate source and public history
+        run: |
+          python3 -m py_compile scripts/toolchain.py scripts/write_spdx_sbom.py ci/scan_public_repo.py
+          python3 scripts/toolchain.py validate
+          python3 -m unittest discover -s tests -v
+          python3 ci/scan_public_repo.py
+
+      - name: Build twice and prove byte reproducibility
+        run: |
+          set -euo pipefail
+          bash scripts/package_source.sh dist-one
+          bash scripts/package_source.sh dist-two
+          for file in pleiades-factory-stack-*.tar.gz pleiades-factory-stack-*.spdx.json pleiades-factory-stack-*.build-receipt.json SHA256SUMS.txt; do
+            cmp "dist-one/$file" "dist-two/$file"
+          done
+
+      - name: Verify checksum manifest
+        run: |
+          cd dist-one
+          sha256sum -c SHA256SUMS.txt
+
+      - name: Upload exact-head candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: pleiades-factory-stack-source-${{ github.sha }}
+          path: dist-one/
+          if-no-files-found: error
+          retention-days: 30
