@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import hashlib
 import json
 import pathlib
 import re
@@ -14,7 +15,8 @@ import tempfile
 from typing import Any
 
 CATALOG_SCHEMA = "pleiades.factory-tool-catalog/v1"
-LOCK_SCHEMA = "pleiades.factory-tool-lock/v1"
+LOCK_SCHEMA = "pleiades.factory-tool-lock/v2"
+STATE_SCHEMA = "pleiades.factory-tool-state/v2"
 NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,95}$")
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 
@@ -50,9 +52,23 @@ def load_json(path: pathlib.Path) -> dict[str, Any]:
     return value
 
 
+def canonical_sha256(value: Any) -> str:
+    encoded = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def normalize_url(url: str) -> str:
-    value = url.strip().removesuffix("/").removesuffix(".git")
-    return value.lower()
+    return url.strip().removesuffix("/").removesuffix(".git").lower()
+
+
+def safe_names(value: Any, field: str, *, nonempty: bool = False) -> list[str]:
+    if not isinstance(value, list) or not all(isinstance(item, str) and NAME_RE.fullmatch(item) for item in value):
+        raise ToolchainError(f"{field} must be a list of safe names")
+    if len(value) != len(set(value)):
+        raise ToolchainError(f"{field} contains duplicates")
+    if nonempty and not value:
+        raise ToolchainError(f"{field} must not be empty")
+    return list(value)
 
 
 def validate_catalog(catalog: dict[str, Any]) -> list[dict[str, Any]]:
@@ -83,15 +99,14 @@ def validate_catalog(catalog: dict[str, Any]) -> list[dict[str, Any]]:
 
         if not isinstance(url, str) or not url.startswith("https://github.com/") or any(c.isspace() for c in url):
             raise ToolchainError(f"{name}: only HTTPS GitHub URLs are accepted")
-        normalized_url = normalize_url(url)
-        if normalized_url in seen_urls:
+        normalized = normalize_url(url)
+        if normalized in seen_urls:
             raise ToolchainError(f"duplicate tool URL: {url}")
-        seen_urls.add(normalized_url)
+        seen_urls.add(normalized)
 
         if not isinstance(category, str) or not NAME_RE.fullmatch(category):
             raise ToolchainError(f"{name}: invalid category")
-        if not isinstance(profiles, list) or not profiles or not all(isinstance(p, str) and NAME_RE.fullmatch(p) for p in profiles):
-            raise ToolchainError(f"{name}: profiles must be a non-empty list of safe names")
+        safe_names(profiles, f"{name}.profiles", nonempty=True)
         if ref is not None and (not isinstance(ref, str) or not ref.strip()):
             raise ToolchainError(f"{name}: ref must be null or a non-empty string")
         if tool.get("license_review") not in {"required", "verified"}:
@@ -105,24 +120,7 @@ def validate_catalog(catalog: dict[str, Any]) -> list[dict[str, Any]]:
     return validated
 
 
-def validate_lock(lock: dict[str, Any], catalog_names: set[str]) -> dict[str, str]:
-    if lock.get("schema") != LOCK_SCHEMA:
-        raise ToolchainError(f"lock schema must be {LOCK_SCHEMA}")
-    entries = lock.get("tools")
-    if not isinstance(entries, dict):
-        raise ToolchainError("lock tools must be an object")
-    result: dict[str, str] = {}
-    for name, value in entries.items():
-        if name not in catalog_names:
-            raise ToolchainError(f"lock contains unknown tool: {name}")
-        if not isinstance(value, dict) or not isinstance(value.get("commit"), str) or not SHA_RE.fullmatch(value["commit"]):
-            raise ToolchainError(f"lock entry for {name} must contain a lowercase 40-character commit SHA")
-        result[name] = value["commit"]
-    return result
-
-
 def resolve_selection(profiles: list[str], names: list[str]) -> tuple[list[str], list[str]]:
-    """Apply the core default only when the caller made no explicit selection."""
     if profiles or names:
         return list(profiles), list(names)
     return ["core"], []
@@ -147,6 +145,47 @@ def select_tools(tools: list[dict[str, Any]], profiles: list[str], names: list[s
     return selected
 
 
+def validate_lock(lock: dict[str, Any], catalog: dict[str, Any], tools: list[dict[str, Any]]) -> dict[str, str]:
+    if lock.get("schema") != LOCK_SCHEMA:
+        raise ToolchainError(f"lock schema must be {LOCK_SCHEMA}; regenerate the lock")
+    if lock.get("catalog_schema") != CATALOG_SCHEMA:
+        raise ToolchainError(f"lock catalog_schema must be {CATALOG_SCHEMA}")
+    if lock.get("catalog_sha256") != canonical_sha256(catalog):
+        raise ToolchainError("lock catalog_sha256 does not match the current catalog")
+
+    selection = lock.get("selection")
+    if not isinstance(selection, dict):
+        raise ToolchainError("lock selection must be an object")
+    profiles = safe_names(selection.get("profiles"), "lock selection.profiles")
+    names = safe_names(selection.get("tools"), "lock selection.tools")
+    if not profiles and not names:
+        raise ToolchainError("lock selection must not be empty")
+
+    entries = lock.get("tools")
+    if not isinstance(entries, dict):
+        raise ToolchainError("lock tools must be an object")
+    catalog_by_name = {tool["name"]: tool for tool in tools}
+    expected = {tool["name"] for tool in select_tools(tools, profiles, names)}
+    if set(entries) != expected:
+        raise ToolchainError("lock entries do not match the recorded selection")
+
+    result: dict[str, str] = {}
+    for name, value in entries.items():
+        tool = catalog_by_name.get(name)
+        if tool is None or not isinstance(value, dict):
+            raise ToolchainError(f"invalid lock entry: {name}")
+        commit = value.get("commit")
+        if not isinstance(commit, str) or not SHA_RE.fullmatch(commit):
+            raise ToolchainError(f"lock entry for {name} must contain a lowercase 40-character commit SHA")
+        if not isinstance(value.get("url"), str) or normalize_url(value["url"]) != normalize_url(tool["url"]):
+            raise ToolchainError(f"lock entry for {name} is bound to a different upstream URL")
+        expected_ref = tool.get("ref") or "HEAD"
+        if value.get("ref") != expected_ref:
+            raise ToolchainError(f"lock entry for {name} was resolved from a different upstream ref")
+        result[name] = commit
+    return result
+
+
 def git_head(path: pathlib.Path) -> str:
     return run(["git", "rev-parse", "HEAD"], cwd=path, capture=True)
 
@@ -165,7 +204,6 @@ def sync_one(tool: dict[str, Any], destination: pathlib.Path, commit: str | None
     name = tool["name"]
     url = tool["url"]
     path = destination / name
-
     if path.exists() and not (path / ".git").is_dir():
         raise ToolchainError(f"{name}: destination exists but is not a Git repository: {path}")
 
@@ -205,6 +243,7 @@ def sync_one(tool: dict[str, Any], destination: pathlib.Path, commit: str | None
     return {
         "name": name,
         "url": url,
+        "ref": tool.get("ref") or "HEAD",
         "commit": actual,
         "action": action,
         "category": tool["category"],
@@ -224,8 +263,8 @@ def command_validate(args: argparse.Namespace) -> int:
     catalog = load_json(args.catalog)
     tools = validate_catalog(catalog)
     if args.lock.exists():
-        validate_lock(load_json(args.lock), {tool["name"] for tool in tools})
-    print(f"VALID catalog_tools={len(tools)} lock={'present' if args.lock.exists() else 'absent'}")
+        validate_lock(load_json(args.lock), catalog, tools)
+    print(f"VALID catalog_tools={len(tools)} catalog_sha256={canonical_sha256(catalog)} lock={'present' if args.lock.exists() else 'absent'}")
     return 0
 
 
@@ -237,7 +276,7 @@ def command_plan(args: argparse.Namespace) -> int:
     for tool in selected:
         status = "disabled-explicit" if not tool["enabled"] else "enabled"
         print(f"{tool['name']}\t{tool['category']}\t{status}\t{tool['url']}")
-    print(f"selected={len(selected)}")
+    print(f"selected={len(selected)} catalog_sha256={canonical_sha256(catalog)}")
     return 0
 
 
@@ -249,13 +288,14 @@ def command_lock(args: argparse.Namespace) -> int:
     entries: dict[str, dict[str, str]] = {}
     failures: list[str] = []
     for tool in selected:
+        requested_ref = tool.get("ref") or "HEAD"
         try:
-            output = run(["git", "ls-remote", tool["url"], tool.get("ref") or "HEAD"], capture=True)
+            output = run(["git", "ls-remote", tool["url"], requested_ref], capture=True)
             first = output.splitlines()[0].split()[0] if output else ""
             if not SHA_RE.fullmatch(first):
                 raise ToolchainError("upstream did not return a commit SHA")
-            entries[tool["name"]] = {"commit": first, "url": tool["url"]}
-            print(f"LOCK {tool['name']} {first}")
+            entries[tool["name"]] = {"commit": first, "url": tool["url"], "ref": requested_ref}
+            print(f"LOCK {tool['name']} {first} {requested_ref}")
         except (ToolchainError, IndexError) as exc:
             failures.append(f"{tool['name']}: {exc}")
             if not args.keep_going:
@@ -264,6 +304,8 @@ def command_lock(args: argparse.Namespace) -> int:
         "schema": LOCK_SCHEMA,
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "catalog_schema": CATALOG_SCHEMA,
+        "catalog_sha256": canonical_sha256(catalog),
+        "selection": {"profiles": profiles, "tools": names},
         "tools": entries,
     }
     write_json_atomic(args.lock, lock)
@@ -281,15 +323,15 @@ def command_sync(args: argparse.Namespace) -> int:
     profiles, names = resolve_selection(args.profile, args.tool)
     selected = select_tools(tools, profiles, names)
     lock_entries: dict[str, str] = {}
+    lock_sha256: str | None = None
     if args.lock.exists():
-        lock_entries = validate_lock(load_json(args.lock), {tool["name"] for tool in tools})
+        lock = load_json(args.lock)
+        lock_entries = validate_lock(lock, catalog, tools)
+        lock_sha256 = canonical_sha256(lock)
 
     missing = [tool["name"] for tool in selected if tool["name"] not in lock_entries]
     if missing and not args.floating:
-        raise ToolchainError(
-            "selected tools are not locked: " + ", ".join(missing) +
-            "; run the lock command or pass --floating explicitly"
-        )
+        raise ToolchainError("selected tools are not locked: " + ", ".join(missing) + "; run the lock command or pass --floating explicitly")
 
     args.tools_dir.mkdir(parents=True, exist_ok=True)
     results: list[dict[str, Any]] = []
@@ -313,11 +355,12 @@ def command_sync(args: argparse.Namespace) -> int:
                 break
 
     state = {
-        "schema": "pleiades.factory-tool-state/v1",
+        "schema": STATE_SCHEMA,
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "catalog_sha256": canonical_sha256(catalog),
+        "lock_sha256": lock_sha256,
         "tools_dir": str(args.tools_dir.resolve()),
-        "profile": profiles,
-        "tools": names,
+        "selection": {"profiles": profiles, "tools": names},
         "floating": args.floating,
         "results": results,
         "failures": failures,
@@ -332,9 +375,7 @@ def build_parser(root: pathlib.Path) -> argparse.ArgumentParser:
     parser.add_argument("--catalog", type=pathlib.Path, default=root / "catalog" / "tools.catalog.json")
     parser.add_argument("--lock", type=pathlib.Path, default=root / "catalog" / "tools.lock.json")
     subparsers = parser.add_subparsers(dest="command", required=True)
-
     subparsers.add_parser("validate")
-
     for name in ("plan", "lock", "sync"):
         command = subparsers.add_parser(name)
         command.add_argument("--profile", action="append", default=[])
