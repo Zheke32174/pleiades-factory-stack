@@ -524,6 +524,17 @@ def file_lock(path: pathlib.Path) -> Iterator[None]:
         os.close(fd)
 
 
+def sync_guard_path(tools_dir: pathlib.Path) -> pathlib.Path:
+    """Return one stable guard shared by every sync of the same tools directory."""
+    if tools_dir.exists() and tools_dir.is_symlink():
+        raise ToolchainError(f"tools directory must not be a symlink: {tools_dir}")
+    tools_dir.parent.mkdir(parents=True, exist_ok=True)
+    canonical_parent = tools_dir.parent.resolve()
+    canonical_tools = canonical_parent / tools_dir.name
+    identity = hashlib.sha256(str(canonical_tools).encode("utf-8")).hexdigest()[:16]
+    return canonical_parent / f".{tools_dir.name}.sync.{identity}.lock"
+
+
 def write_json_atomic(path: pathlib.Path, value: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(
@@ -625,7 +636,26 @@ def command_lock(args: argparse.Namespace) -> int:
         return 0
 
 
-def command_sync(args: argparse.Namespace) -> int:
+def verify_checkout_generation(
+    tools_dir: pathlib.Path,
+    results: list[dict[str, Any]],
+) -> None:
+    """Refuse to publish state if a checkout changed after it was inspected."""
+    for result in results:
+        path = tools_dir / result["name"]
+        current_commit = git_head(path)
+        current_worktree = worktree_identity(path)
+        if current_commit != result["commit"] or current_worktree != result["worktree"]:
+            raise ToolchainError(
+                f"{result['name']}: checkout changed before aggregate state publication"
+            )
+
+
+def _command_sync_locked(
+    args: argparse.Namespace,
+    guard: pathlib.Path,
+) -> int:
+    started_at = dt.datetime.now(dt.timezone.utc).isoformat()
     catalog = load_json(args.catalog)
     tools = validate_catalog(catalog)
     profiles, names = resolve_selection(args.profile, args.tool)
@@ -668,31 +698,45 @@ def command_sync(args: argparse.Namespace) -> int:
             if not args.keep_going:
                 break
 
+    verify_checkout_generation(args.tools_dir, results)
     reproducible = (
         not args.floating
         and not failures
         and bool(results)
         and all(result["reproducible"] for result in results)
     )
-    state = {
-        "schema": STATE_SCHEMA,
-        "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+    generation_material = {
         "catalog_sha256": canonical_sha256(catalog),
         "lock_sha256": lock_sha256,
         "tools_dir": str(args.tools_dir.resolve()),
         "selection": {"profiles": profiles, "tools": names},
         "floating": args.floating,
-        "reproducible": reproducible,
         "source_scope": "top-level-git-tree-only",
         "results": results,
         "failures": failures,
     }
+    state = {
+        "schema": STATE_SCHEMA,
+        "sync_started_at": started_at,
+        "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "checkout_generation_sha256": canonical_sha256(generation_material),
+        "sync_guard": str(guard),
+        **generation_material,
+        "reproducible": reproducible,
+    }
     write_json_atomic(args.state, state)
     print(
         f"summary: success={len(results)} failed={len(failures)} "
-        f"reproducible={str(reproducible).lower()} state={args.state}"
+        f"reproducible={str(reproducible).lower()} "
+        f"generation={state['checkout_generation_sha256']} state={args.state}"
     )
     return 1 if failures else 0
+
+
+def command_sync(args: argparse.Namespace) -> int:
+    guard = sync_guard_path(args.tools_dir)
+    with file_lock(guard):
+        return _command_sync_locked(args, guard)
 
 
 def build_parser(root: pathlib.Path) -> argparse.ArgumentParser:
