@@ -24,7 +24,12 @@ jobs:
 
       - name: Compile Python and shell
         run: |
-          python3 -m py_compile scripts/toolchain.py scripts/write_spdx_sbom.py tests/test_toolchain.py ci/scan_public_repo.py
+          python3 -m py_compile \
+            scripts/toolchain.py \
+            scripts/write_spdx_sbom.py \
+            tests/test_toolchain.py \
+            tests/test_sync_serialization.py \
+            ci/scan_public_repo.py
           bash -n bootstrap-tools.sh scripts/package_source.sh
 
       - name: Validate catalog
