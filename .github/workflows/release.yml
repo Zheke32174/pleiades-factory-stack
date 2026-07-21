@@ -1,56 +1,132 @@
-name: Release
+name: source release
 
 on:
   push:
-    branches: [ main, master ]
-    tags: [ 'v*' ]
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Release version/tag, for example v0.1.0'
-        required: false
-        default: 'v0.1.0'
+    tags:
+      - 'v*'
 
 permissions:
   contents: write
-  packages: read
+  id-token: write
+  attestations: write
+  artifact-metadata: write
+
+concurrency:
+  group: source-release
+  cancel-in-progress: false
 
 jobs:
-  release:
+  publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          show-progress: false
+          persist-credentials: false
 
-      - name: Resolve version
-        id: version
-        shell: bash
-        run: |
-          VERSION="${{ github.event.inputs.version }}"
-          if [ -z "$VERSION" ]; then VERSION="v0.1.0"; fi
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Write release notes
-        shell: bash
-        run: |
-          cat > RELEASE_NOTES.md <<EOF
-          # pleiades-factory-stack ${{ steps.version.outputs.version }}
-
-          Public showcase release for pleiades-factory-stack.
-
-          GitHub Package:
-          ghcr.io/zheke32174/pleiades-factory-stack:latest
-
-          GitHub provides source ZIP and source tarball assets automatically on this Release.
-          EOF
-
-      - name: Create or update GitHub Release
+      - name: Validate immutable version identity
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ steps.version.outputs.version }}
-        shell: bash
+          TAG: ${{ github.ref_name }}
         run: |
-          if gh release view "$VERSION" >/dev/null 2>&1; then
-            gh release edit "$VERSION" --target "$GITHUB_SHA" --title "pleiades-factory-stack $VERSION" --notes-file RELEASE_NOTES.md
-          else
-            gh release create "$VERSION" --target "$GITHUB_SHA" --title "pleiades-factory-stack $VERSION" --notes-file RELEASE_NOTES.md
+          set -euo pipefail
+          version="$(tr -d '[:space:]' < VERSION)"
+          test "$TAG" = "v$version"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git rev-parse --verify "refs/tags/$TAG"
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+          git diff --quiet
+          git diff --cached --quiet
+
+      - name: Validate implementation and public history
+        run: |
+          python3 -m py_compile scripts/toolchain.py scripts/write_spdx_sbom.py ci/scan_public_repo.py
+          python3 scripts/toolchain.py validate
+          python3 -m unittest discover -s tests -v
+          python3 ci/scan_public_repo.py
+
+      - name: Build twice and verify release assets
+        run: |
+          set -euo pipefail
+          bash scripts/package_source.sh dist-one
+          bash scripts/package_source.sh dist-two
+          diff -u <(find dist-one -maxdepth 1 -type f -printf '%f\n' | sort) \
+                  <(find dist-two -maxdepth 1 -type f -printf '%f\n' | sort)
+          while IFS= read -r name; do
+            cmp "dist-one/$name" "dist-two/$name"
+          done < <(find dist-one -maxdepth 1 -type f -printf '%f\n' | sort)
+          mv dist-one dist
+          rm -rf dist-two
+          cd dist
+          sha256sum -c SHA256SUMS.txt
+
+      - name: Attest release assets
+        uses: actions/attest@a1948c3f048ba23858d222213b7c278aabede763 # v4.1.1
+        with:
+          subject-path: |
+            dist/pleiades-factory-stack-*.tar.gz
+            dist/pleiades-factory-stack-*.spdx.json
+            dist/pleiades-factory-stack-*.build-receipt.json
+            dist/SHA256SUMS.txt
+
+      - name: Write download-first release notes
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          version = Path("VERSION").read_text(encoding="utf-8").strip()
+          archive = f"pleiades-factory-stack-{version}.tar.gz"
+          repository = os.environ["GITHUB_REPOSITORY"]
+          notes = f"""# Pleiades Factory Stack {version}
+
+          ## Download
+
+          **Download `{archive}` from the Assets section below.**
+
+          Verify checksums with:
+
+          `sha256sum -c SHA256SUMS.txt`
+
+          Verify GitHub build provenance with:
+
+          `gh attestation verify {archive} --repo {repository}`
+
+          This release contains the Pleiades-owned source catalog and synchronization utility. It does **not** bundle any cataloged third-party source repositories.
+
+          Also download:
+
+          - `SHA256SUMS.txt` to verify every asset;
+          - `pleiades-factory-stack-{version}.spdx.json` for the SPDX 2.3 source inventory;
+          - `pleiades-factory-stack-{version}.build-receipt.json` for the exact commit and package hashes.
+
+          After extraction, run `python3 scripts/toolchain.py validate`. A catalog entry authorizes evaluation only; it does not authorize execution, installation, redistribution, or integration of the third-party project.
+          """
+          Path("dist/RELEASE-NOTES.md").write_text(notes, encoding="utf-8")
+          PY
+
+      - name: Refuse release overwrite
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::Release $GITHUB_REF_NAME already exists"
+            exit 1
           fi
+
+      - name: Publish immutable GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            dist/*.tar.gz \
+            dist/*.spdx.json \
+            dist/*.build-receipt.json \
+            dist/SHA256SUMS.txt \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Pleiades Factory Stack ${GITHUB_REF_NAME#v}" \
+            --notes-file dist/RELEASE-NOTES.md \
+            --verify-tag

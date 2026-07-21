@@ -1,76 +1,96 @@
 # Pleiades Factory Stack
 
-A manifest-driven source catalog and synchronization layer for Pleiades research tools.
+> **Status:** experimental but working source-catalog infrastructure. This is not a package manager, software store, or approval to execute the projects it catalogs.
 
-The repository does not treat “clone a pile of latest branches” as a reproducible toolchain. It separates:
+Pleiades Factory Stack records which third-party research projects are worth evaluating, resolves exact upstream commits, and synchronizes reviewed source checkouts without silently treating mutable upstream branches as a reproducible toolchain.
 
-- **catalog** — what projects are relevant and why;
-- **lock** — the exact upstream commits selected for a reproducible checkout;
+## Get the tool
+
+### Reviewed source release
+
+Open the [GitHub Releases page](https://github.com/Zheke32174/pleiades-factory-stack/releases) and download the versioned file named:
+
+`pleiades-factory-stack-<version>.tar.gz`
+
+Each proper release also includes:
+
+- `SHA256SUMS.txt`;
+- an SPDX 2.3 JSON source inventory;
+- an exact-commit build receipt.
+
+**Current publication state:** no permanent public release is considered valid until the tag-only release workflow has produced and verified those assets. Pull-request artifacts are review candidates, not releases.
+
+### Reviewed checkout
+
+A clean checkout is also supported:
+
+```bash
+git clone https://github.com/Zheke32174/pleiades-factory-stack.git
+cd pleiades-factory-stack
+python3 scripts/toolchain.py validate
+```
+
+Requirements are Python 3.9 or newer, Git, and a POSIX-like shell for the compatibility wrapper and source-package script. Bare Linux and WSL are both supported development substrates. Termux-specific adaptation lives in `pleiades-factory-stack-termux`.
+
+## What the repository owns
+
+The repository separates four concerns:
+
+- **catalog** — projects considered relevant and why;
+- **lock** — exact upstream commits selected for a reproducible checkout;
 - **local state** — what is actually present under `tools/`;
-- **integration** — a later, separately reviewed decision to build or expose a tool.
-
-## Current status
-
-Active research infrastructure, not a production package manager.
+- **integration** — a later, separately reviewed decision to build, execute, package, or expose a tool.
 
 The current implementation:
 
 - validates tool names, profiles, categories, HTTPS upstream URLs, and review metadata;
-- supports small functional profiles instead of cloning every project by default;
-- resolves exact upstream commit SHAs into a lock file;
+- supports bounded functional profiles instead of cloning every project by default;
+- resolves exact upstream commit SHAs into a reviewed lock file;
 - checks out pinned commits in detached HEAD state;
-- rejects wrong-origin repositories and dirty trees by default;
-- records actual checkout state and failures;
-- never silently reports a failed clone as success;
-- requires `--floating` before using an unpinned upstream head;
+- rejects unexpected origins and dirty trees by default;
+- records actual checkout commits and failures;
+- requires `--floating` before following an unpinned upstream head;
 - clones source only—it does not build, execute, install, or grant capabilities;
-- keeps Termux behavior in the separate Termux-specific repository.
+- scans the public tree and reachable Git history for configured credential, private-topology, and host-local patterns;
+- builds deterministic source-release candidates with checksums, SPDX inventory, and an exact-commit receipt.
 
-## Layout
+## Quick start without mutation
 
-```text
-catalog/tools.catalog.json     project inventory, profiles, URL, license-review state
-catalog/tools.lock.json        generated exact commit pins; commit this after review
-scripts/toolchain.py           validate, plan, lock, and sync engine
-bootstrap-tools.sh             safe compatibility wrapper for planning/locked sync
-tools/                         local source checkouts; ignored
-state/tools-state.json         actual checkout report; ignored
-CREDITS.md                     attribution and license-review boundary
-docs/                          research and integration notes
-```
-
-## Validate the catalog
+Validate the catalog:
 
 ```bash
 python3 scripts/toolchain.py validate
 ```
 
-## Inspect a profile
-
-The default `core` profile is deliberately small and is applied only when no explicit profile or tool was supplied.
+Inspect the bounded default profile:
 
 ```bash
 python3 scripts/toolchain.py plan
-python3 scripts/toolchain.py plan --profile memory
-python3 scripts/toolchain.py plan --profile binary-analysis
-python3 scripts/toolchain.py plan --profile all
 ```
 
-A named tool can be selected directly. Explicit selections do not silently append the `core` profile:
+Inspect explicit selections. Explicit profiles or tools do not silently append `core`:
 
 ```bash
+python3 scripts/toolchain.py plan --profile memory
+python3 scripts/toolchain.py plan --profile binary-analysis
 python3 scripts/toolchain.py plan --tool repomix
 ```
 
-## Create a reproducible lock
+A fresh checkout intentionally has no generated lock. Running the compatibility wrapper in that state prints the non-mutating core plan and the exact lock command rather than resolving mutable upstream heads or failing halfway through bootstrap:
 
-Resolve the current upstream heads for the selected profile:
+```bash
+bash bootstrap-tools.sh
+```
+
+## Create and review a lock
+
+Resolve the selected upstream refs:
 
 ```bash
 python3 scripts/toolchain.py lock --profile core
 ```
 
-Review and commit `catalog/tools.lock.json`. The lock records exact 40-character commit SHAs. Regenerating it is an explicit dependency update, not a side effect of routine startup.
+Review and commit `catalog/tools.lock.json`. Lock generation is an explicit dependency update, not a routine-startup side effect.
 
 Larger examples:
 
@@ -79,7 +99,7 @@ python3 scripts/toolchain.py lock --profile agents --profile memory
 python3 scripts/toolchain.py lock --profile all --keep-going
 ```
 
-## Synchronize local source
+## Synchronize source
 
 With a reviewed lock:
 
@@ -87,82 +107,88 @@ With a reviewed lock:
 python3 scripts/toolchain.py sync --profile core
 ```
 
-The compatibility wrapper performs the same locked core sync when a reviewed lock exists:
-
-```bash
-bash bootstrap-tools.sh
-```
-
-A fresh checkout intentionally has no generated lock. In that state, no-argument bootstrap prints the non-mutating core plan and the exact lock command instead of resolving mutable upstream heads or failing halfway through bootstrap.
-
-To update existing checkouts to the commits in a changed lock:
+To move existing clean checkouts to a changed reviewed lock:
 
 ```bash
 python3 scripts/toolchain.py sync --profile core --update
 ```
 
-Unpinned research is possible only through an explicit escape hatch:
+Unpinned research requires an explicit escape hatch:
 
 ```bash
 python3 scripts/toolchain.py sync --profile core --floating
 ```
 
-Floating mode is useful for exploration and unsuitable as a reproducible build input.
+Floating mode is unsuitable as a reproducible build input.
 
-## Failure behavior
+## Failure and local-state behavior
 
-The default is fail-fast. `--keep-going` attempts the rest of the selection and returns nonzero if any tool failed:
+The default is fail-fast. `--keep-going` attempts the remaining selection and still returns nonzero if anything failed:
 
 ```bash
 python3 scripts/toolchain.py sync --profile all --keep-going
 ```
 
-Every run writes `state/tools-state.json` with the resolved profile/tool selection, successes, actual commit SHAs, and failures. A dirty checkout, unexpected origin URL, invalid catalog, missing lock entry, or failed Git command is surfaced rather than converted into a cheerful “done.”
+Every synchronization run writes ignored `state/tools-state.json` with the requested selection, actual commits, successes, and failures. A dirty checkout, unexpected origin, invalid catalog, missing lock entry, or failed Git command is surfaced rather than converted into a cheerful completion message.
+
+The tool performs no telemetry. It makes network requests only when the operator explicitly runs `lock` or `sync`; those commands contact the Git hosts named in the catalog. Locally cloned third-party repositories and state reports remain outside this repository unless an operator deliberately moves or commits them.
+
+## Layout
+
+```text
+VERSION                         source-package version
+catalog/tools.catalog.json      project inventory and review metadata
+catalog/tools.lock.json         generated exact pins; absent until reviewed
+scripts/toolchain.py            validate, plan, lock, and sync engine
+bootstrap-tools.sh              compatibility wrapper for plan/locked sync
+scripts/package_source.sh       reproducible source-package builder
+scripts/write_spdx_sbom.py      exact-commit SPDX source inventory
+ci/scan_public_repo.py          current-tree and reachable-history sensitivity gate
+tools/                          local third-party source checkouts; ignored
+state/tools-state.json          local synchronization receipt; ignored
+CREDITS.md                      attribution and license-review boundary
+THIRD_PARTY_NOTICES.md          third-party handling notice
+```
 
 ## Profiles
 
-Current profiles include:
+Current profiles include `core`, `agents`, `continual`, `memory`, `mcp`, `code-intelligence`, `binary-analysis`, `cross-isa`, `security-research`, `runtime`, `developer-tools`, `reference`, `termux`, and `all`.
 
-- `core`
-- `agents`
-- `continual`
-- `memory`
-- `mcp`
-- `code-intelligence`
-- `binary-analysis`
-- `cross-isa`
-- `security-research`
-- `runtime`
-- `developer-tools`
-- `reference`
-- `all`
+Presence in any profile means **worth evaluating**, not approved to execute.
 
-Presence in a profile means “worth evaluating,” not “approved to execute.”
+## License and third-party provenance
 
-## License and provenance
+The Pleiades-owned synchronization code is MIT licensed. Cataloged projects retain their own licenses, notices, trademarks, dependencies, and usage restrictions.
 
-`license_hint` values in the catalog were carried forward from the previous credits file and remain **review-required** unless explicitly marked verified. Upstream licenses can change, dependencies can introduce additional terms, and local source cloning is not “binary-only use.”
+`license_hint` is informational unless the exact entry is explicitly marked verified. Before modifying, redistributing, embedding, hosting, or exposing a cataloged tool, review the exact locked commit and preserve every applicable notice. See [CREDITS.md](CREDITS.md) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-Before modifying, redistributing, embedding, or exposing a tool as a service, review its exact locked commit and preserve all applicable notices. See [CREDITS.md](CREDITS.md).
+No source release from this repository is intended to bundle the cataloged third-party repositories themselves.
 
-## Pleiades integration boundary
+## Security, privacy, and support
 
-This repository supplies candidates and exact source provenance. It should later feed:
+- Security policy and supported-version posture: [SECURITY.md](SECURITY.md)
+- Data and network behavior: [PRIVACY.md](PRIVACY.md)
+- Contribution and support expectations: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Version history: [CHANGELOG.md](CHANGELOG.md)
 
-- the polyglot package registry;
-- reproducible Nix environments;
-- isolated build/test sandboxes;
-- the continual harness evaluation queue;
-- signed integration manifests;
-- the cognitive coprocessor's approved tool catalog.
+Do not place credentials, private topology, local evidence, or personal data in a public issue. Use GitHub's private vulnerability-reporting channel when available.
 
-No catalog entry should become a callable Pleiades capability merely because its repository cloned successfully.
+## Update, rollback, and removal
 
-## Related repositories
+To update the utility itself, check out a reviewed tag or commit and rerun validation. Lock updates are reviewed separately from utility updates.
 
-- [`pleiades`](https://github.com/Zheke32174/pleiades) — authority, policy, learning, and runtime architecture
-- [`pleiades-container`](https://github.com/Zheke32174/pleiades-container) — Linux substrate
-- [`pleiades-factory`](https://github.com/Zheke32174/pleiades-factory) — private orchestration and promotion work
-- [`pleiades-factory-stack-termux`](https://github.com/Zheke32174/pleiades-factory-stack-termux) — Android/Termux-specific adaptation
+To roll back, restore the previous reviewed utility commit and previous `catalog/tools.lock.json`. Because synchronized tools are detached at exact commits, a reviewed prior lock can restore their prior source identities.
 
-MIT — see [LICENSE](LICENSE). Third-party projects retain their own licenses.
+To remove the utility, delete its checkout. To remove locally synchronized third-party source and local receipts, also delete the ignored `tools/` and `state/` directories. No system service, daemon, package database, or global configuration is installed by this repository.
+
+## Pleiades boundary
+
+This repository supplies source candidates and provenance. Catalog entries must pass separate licensing, security, build, evaluation, and promotion review before becoming callable Pleiades capabilities.
+
+Related public repositories:
+
+- [`pleiades`](https://github.com/Zheke32174/pleiades) — public contracts and bounded runtime architecture;
+- [`pleiades-container`](https://github.com/Zheke32174/pleiades-container) — Linux substrate;
+- [`pleiades-factory-stack-termux`](https://github.com/Zheke32174/pleiades-factory-stack-termux) — thin Termux source-profile adapter.
+
+The private factory orchestrator is intentionally not a public dependency or visitor-facing installation target.

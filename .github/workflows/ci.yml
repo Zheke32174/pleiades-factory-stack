@@ -2,25 +2,32 @@ name: CI
 
 on:
   push:
+    branches:
+      - main
   pull_request:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          show-progress: false
+          persist-credentials: false
 
       - name: Compile Python and shell
         run: |
-          python3 -m py_compile scripts/toolchain.py tests/test_toolchain.py
-          bash -n bootstrap-tools.sh
+          python3 -m py_compile scripts/toolchain.py scripts/write_spdx_sbom.py tests/test_toolchain.py ci/scan_public_repo.py
+          bash -n bootstrap-tools.sh scripts/package_source.sh
 
       - name: Validate catalog
         run: python3 scripts/toolchain.py validate
@@ -34,6 +41,9 @@ jobs:
           python3 scripts/toolchain.py plan --profile memory
           python3 scripts/toolchain.py plan --tool repomix
 
+      - name: Scan public tree and Git history
+        run: python3 ci/scan_public_repo.py
+
       - name: Repository boundary checks
         run: |
           set -euo pipefail
@@ -42,3 +52,38 @@ jobs:
           python3 -m json.tool catalog/tools.catalog.json >/dev/null
           grep -Fq 'license_review' catalog/tools.catalog.json
           grep -Fq 'unpinned_requires_explicit_floating_mode' catalog/tools.catalog.json
+          test "$(cat VERSION)" = "0.2.0"
+
+  source-package:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          show-progress: false
+          persist-credentials: false
+
+      - name: Build twice and prove byte reproducibility
+        run: |
+          set -euo pipefail
+          bash scripts/package_source.sh dist-one
+          bash scripts/package_source.sh dist-two
+          for first in dist-one/*; do
+            file="$(basename "$first")"
+            cmp "$first" "dist-two/$file"
+          done
+
+      - name: Verify checksum manifest
+        run: |
+          cd dist-one
+          sha256sum -c SHA256SUMS.txt
+
+      - name: Upload exact-head candidate
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: pleiades-factory-stack-source-${{ github.sha }}
+          path: dist-one/
+          if-no-files-found: error
+          retention-days: 30
