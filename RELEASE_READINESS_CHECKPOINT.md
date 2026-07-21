@@ -7,8 +7,8 @@ This ledger is the durable continuation point for public-release review of `Zhek
 - Repository: `Zheke32174/pleiades-factory-stack`
 - Public distribution draft: PR #4, branch `hardening/public-distribution-readiness-v1`
 - Stack base: PR #3, branch `codex/followup-selection-bootstrap-20260718`
-- Last fully validated implementation head: `95f87b80183386b44c24d0aac158858ce7d50fed`
-- Current ledger head: produced by this receipt-only update; inspect PR #4 for the exact SHA
+- Last fully validated head: `1737f243a887689571d982180e50b45ad3482419`
+- Exact-head CI run: `29789899302`
 - Release component: source catalog, lock, profile planning, and synchronization utility only
 - Current disposition: `HOLD — STACKED DEPENDENCIES AND PRERELEASE RECEIPT PENDING`
 
@@ -26,12 +26,15 @@ This ledger is the durable continuation point for public-release review of `Zhek
 - Added GitHub artifact attestations for the source archive, SPDX inventory, build receipt, and checksum manifest.
 - Added default-branch ancestry validation before tag publication.
 - Added checksum and provenance verification commands to release notes.
+- Added a persistent receipt ledger and proved its exact current head through normal CI.
 
 ## External comparison provenance
 
-Reviewed on 2026-07-20:
+Reviewed on 2026-07-20 and refreshed on 2026-07-21:
 
 - GitHub Secure Use Reference: full-length Action commit SHAs are the only immutable Action references.
+- GitHub artifact-attestation guidance: attestations have security value only when consumers verify the artifact, signer identity, and timestamp; public-repository attestations use the Sigstore public-good infrastructure.
+- GitHub offline-verification guidance: attestation bundles and trusted roots can be downloaded for disconnected verification; trusted-root material should be refreshed when importing newly signed material.
 - OpenSSF Scorecard: high-value public-release checks include least-privilege workflow tokens, pinned dependencies, branch protection, CI tests, security policy, packaging, and signed or attested releases.
 - Existing `Zheke32174/pleiades` draft release path: validated local precedent for deterministic assets, exact commit receipts, immutable Action references, provenance attestations, and download-first verification instructions.
 
@@ -48,16 +51,19 @@ Reconsider only when upstream security guidance changes, a trusted release is wi
 ## Validation receipts
 
 - PR #8 exact head `731b987bc250b2a833433da54f7f46375f1eaf94`: CI run #47 completed successfully, including Python compilation, unit tests, catalog validation, profile planning, public tree/history scan, deterministic source packaging, checksums, and artifact publication.
-- PR #4 exact head `95f87b80183386b44c24d0aac158858ce7d50fed`: CI run `29789787170` completed successfully.
-  - `verify` job: immutable checkout action executed; Python/shell compilation passed; catalog validation passed; unit tests passed; profile planning passed; public tree/history scan passed; repository boundary checks passed.
-  - `source-package` job: immutable checkout action executed; two builds compared byte-for-byte; checksum verification passed; exact-head candidate artifact uploaded.
-- The tag-only release and attestation path has not been executed. CI success does not prove release publication or attestation behavior.
+- PR #4 implementation head `95f87b80183386b44c24d0aac158858ce7d50fed`: CI run `29789787170` completed successfully.
+- PR #4 exact current head `1737f243a887689571d982180e50b45ad3482419`: CI run `29789899302` completed successfully.
+  - `verify` job: immutable checkout executed; Python and shell compilation passed; catalog validation passed; unit tests passed; profile planning passed; public tree and reachable-history scan passed; repository-boundary checks passed.
+  - `source-package` job: immutable checkout executed; two complete builds compared byte-for-byte; checksum-manifest verification passed; exact-head candidate artifact uploaded.
+- The tag-only release and attestation path has not been executed. CI success proves the source candidate and workflow inputs at the current head; it does not prove GitHub Release publication, live attestation creation, overwrite refusal, or consumer verification against actual release assets.
 
-The ledger-only commit following the validated head does not change executable or workflow behavior; nevertheless, the exact workflow receipt remains bound to `95f87b8...`.
+### Changed conclusion
+
+The prior conclusion that the ledger-only head lacked an exact receipt is closed. The complete current PR head is now validated. Remaining HOLD gates are integration, administrative evidence, and an explicitly authorized disposable prerelease—not ordinary source CI.
 
 ## Open blockers
 
-1. The first explicitly authorized disposable prerelease must prove tag ancestry, attestation publication, checksum verification, download instructions, and release overwrite refusal against real GitHub Release assets.
+1. The first explicitly authorized disposable prerelease must prove tag ancestry, attestation publication, checksum verification, download instructions, release overwrite refusal, and consumer verification against real GitHub Release assets.
 2. Generated locks still need complete binding to exact catalog digest, upstream URL, requested ref, and recorded selection through the stacked lock/sync drafts.
 3. Arbitrary remote refs still require exact matched-ref and annotated-tag object/peeled-commit semantics.
 4. Submodule and language dependency identities are reported but are not recursively locked.
@@ -74,18 +80,20 @@ The ledger-only commit following the validated head does not change executable o
 - Checkout credential persistence during validation: disabled and exact-head CI validated.
 - Release tag not proven reachable from default branch: resolved in draft; live tag receipt pending.
 - Public README implied a private visitor dependency: resolved in draft.
+- Current ledger head lacked a normal exact-head receipt: resolved by CI run `29789899302`.
 
 ## Deferred items
 
 - OpenSSF Scorecard automation is deferred until the core draft stack is integrated and repository rules are intentionally configured. Adding another third-party workflow now would increase notification and dependency churn without resolving the current release blockers.
 - CodeQL is deferred because the current codebase is mostly Python/shell and the immediate release boundary already has compilation, unit tests, deterministic packaging, sensitivity scanning, and exact source receipts. Reconsider after the stack stabilizes or if public adoption expands.
+- Offline attestation-bundle publication is deferred until a real prerelease exists. Reconsider if disconnected installation becomes a supported use case or if consumers cannot use online `gh attestation verify`.
 - No package registry publication is planned; the supported public artifact is a deterministic source archive.
 
 ## Reconsideration triggers
 
 Reprocess this repository only when at least one occurs:
 
-- PR #4, #6, or #8 head/base changes;
+- PR #3, #4, #6, or #8 head/base changes;
 - release-path validation changes state;
 - a workflow Action advisory or trusted release changes;
 - the sensitivity scanner reports a new finding;
@@ -93,8 +101,9 @@ Reprocess this repository only when at least one occurs:
 - a public-facing maturity, support, install, package, or release claim changes;
 - repository rules/branch protection evidence becomes available;
 - explicit authorization is given for a disposable prerelease;
+- disconnected/offline artifact verification becomes a supported requirement;
 - an explicit steward request reopens a deferred item.
 
 ## Next action
 
-Skip ordinary reprocessing until a trigger occurs. The next substantive checkpoint is stacked dependency integration in order or an explicitly authorized disposable prerelease. Do not publish a tag or release merely to exercise the workflow without steward authorization.
+Skip ordinary source reprocessing until a trigger occurs. The next substantive checkpoint is stacked dependency integration in order or an explicitly authorized disposable prerelease. Do not publish a tag or release merely to exercise the workflow without steward authorization.
