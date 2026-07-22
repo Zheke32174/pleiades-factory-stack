@@ -13,5 +13,8 @@ __pycache__/
 tools/
 state/
 
-# Temporary lock writes; the completed catalog/tools.lock.json is intended to be tracked.
+# Transactional lock staging and serialization files; the completed
+# catalog/tools.lock.json remains intentionally reviewable and trackable.
 catalog/*.tmp
+catalog/.*.tmp.*
+catalog/.*.generation.lock
